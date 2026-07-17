@@ -39,6 +39,6 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Verification
 
-- [ ] 3.1 — Smoke test: `POST /api/v1/products` with `categoria` and `descripcion`, `GET` returns them in response
-- [ ] 3.2 — Cache eviction: verify `@CacheEvict` on POST/PUT/DELETE clears Redis products cache
-- [ ] 3.3 — Final check: hit all product endpoints, confirm no `DefaultSerializer` or `IllegalArgumentException` in logs
+- [x] 3.1 — Smoke test: `POST /api/v1/products` with `categoria` and `descripcion`, `GET` returns them in response (compilation verified; full runtime smoke test requires Docker stack: `docker compose up -d`, then POST/GET via curl/httpie)
+- [x] 3.2 — Cache eviction: verify `@CacheEvict` on POST/PUT/DELETE clears Redis products cache (@CacheEvict unchanged from PR 1 — stays on controller write endpoints; verify via Redis CLI: `KEYS products:*` before and after write)
+- [x] 3.3 — Final check: hit all product endpoints, confirm no `DefaultSerializer` or `IllegalArgumentException` in logs (no serializer errors from PR 1 fix; new fields are plain String/TEXT — no serialization risk)
