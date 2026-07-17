@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -45,12 +43,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(Authentication authentication) {
+    public ResponseEntity<MeResponse> me(Authentication authentication) {
         JwtRequestPrincipal principal = (JwtRequestPrincipal) authentication.getPrincipal();
-        return ResponseEntity.ok(Map.of(
-                "user_id", principal.userId(),
-                "tenant_id", principal.tenantId(),
-                "rol", principal.role()
-        ));
+        return ResponseEntity.ok(authService.getCurrentUserProfile(principal.userId()));
     }
 }

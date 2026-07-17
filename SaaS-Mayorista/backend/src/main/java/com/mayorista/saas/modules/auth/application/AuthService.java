@@ -2,6 +2,7 @@ package com.mayorista.saas.modules.auth.application;
 
 import com.mayorista.saas.modules.auth.api.BootstrapRequest;
 import com.mayorista.saas.modules.auth.api.LoginRequest;
+import com.mayorista.saas.modules.auth.api.MeResponse;
 import com.mayorista.saas.modules.auth.api.TokenResponse;
 import com.mayorista.saas.modules.auth.domain.RefreshTokenEntity;
 import com.mayorista.saas.modules.auth.domain.RefreshTokenRepository;
@@ -132,6 +133,12 @@ public class AuthService {
             Duration ttl = Duration.between(Instant.now(), token.getExpiraEn()).abs();
             tokenBlocklistService.blockJti(jti, ttl);
         });
+    }
+
+    public MeResponse getCurrentUserProfile(UUID userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
+        return new MeResponse(user.getId(), user.getTenantId(), user.getEmail(), user.getNombre(), user.getRol());
     }
 
     private TokenResponse issueTokenPair(UserEntity user) {

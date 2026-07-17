@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../shared/store/authStore';
 export function LoginPage() {
   const navigate = useNavigate();
   const setTokens = useAuthStore((s) => s.setTokens);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const [mode, setMode] = useState<'login' | 'bootstrap'>('login');
   const [email, setEmail] = useState('');
@@ -32,6 +33,10 @@ export function LoginPage() {
           });
 
       setTokens(tokenData.accessToken, tokenData.refreshToken);
+      try {
+        const me = await authApi.me();
+        setUser(me);
+      } catch { /* ignora error de perfil post-login */ }
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'No fue posible autenticar');

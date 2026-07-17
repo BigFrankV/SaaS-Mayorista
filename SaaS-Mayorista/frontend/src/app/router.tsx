@@ -1,13 +1,19 @@
+import { useEffect } from 'react';
 import { Navigate, Route, Routes, Link } from 'react-router-dom';
 import { LoginPage } from '../modules/auth/pages/LoginPage';
 import { ProductListPage } from '../modules/products/pages/ProductListPage';
 import { POSPage } from '../modules/sales/pages/POSPage';
 import { DashboardPage } from '../modules/dashboard/pages/DashboardPage';
+import { UserListPage } from '../modules/users/pages/UserListPage';
+import { RoleRoute } from '../modules/users/components/RoleRoute';
 import { useAuthStore } from '../shared/store/authStore';
+import { authApi } from '../shared/api/authApi';
 
 function Layout({ children }: { children: React.ReactNode }) {
   const clear = useAuthStore((s) => s.clear);
   const refreshToken = useAuthStore((s) => s.refreshToken);
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
 
   return (
     <div className="container">
@@ -15,6 +21,10 @@ function Layout({ children }: { children: React.ReactNode }) {
         <Link className="card" to="/dashboard">Dashboard</Link>
         <Link className="card" to="/products">Productos</Link>
         <Link className="card" to="/pos">POS</Link>
+        {isAdmin() && <Link className="card" to="/users">Usuarios</Link>}
+        <span style={{ marginLeft: 'auto', padding: '0.5rem' }}>
+          {user?.nombre ?? ''} ({user?.rol ?? ''})
+        </span>
         <button
           className="secondary"
           onClick={() => {
@@ -38,6 +48,16 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  const clear = useAuthStore((s) => s.clear);
+
+  useEffect(() => {
+    if (accessToken && !user) {
+      authApi.me().then(setUser).catch(() => clear());
+    }
+  }, [accessToken, user]);
+
   if (!accessToken) {
     return <Navigate to="/login" replace />;
   }
@@ -69,6 +89,16 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             <Layout><DashboardPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={['ADMIN']}>
+              <Layout><UserListPage /></Layout>
+            </RoleRoute>
           </ProtectedRoute>
         }
       />

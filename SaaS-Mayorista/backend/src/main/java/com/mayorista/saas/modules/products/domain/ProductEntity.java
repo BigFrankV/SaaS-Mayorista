@@ -103,6 +103,10 @@ public class ProductEntity {
         this.precioNeto = precioNeto;
     }
 
+    public void setCreadoEn(Instant creadoEn) {
+        this.creadoEn = creadoEn;
+    }
+
     public void setActualizadoEn(Instant actualizadoEn) {
         this.actualizadoEn = actualizadoEn;
     }
