@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Mayorista Dev",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "mayorista_user",
+      "Password": "mayorista_secure_pass",
+      "SSLMode": "prefer"
+    }
+  }
+}

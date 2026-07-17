@@ -1,0 +1,27 @@
+package com.mayorista.saas.modules.products.api;
+
+import com.mayorista.saas.modules.products.domain.ProductEntity;
+
+import java.util.UUID;
+
+public record ProductResponse(
+        UUID id,
+        String codigoBarras,
+        String nombre,
+        int stockActual,
+        int stockMinimo,
+        int precioNeto,
+        boolean stockBajo
+) {
+    public static ProductResponse from(ProductEntity entity) {
+        return new ProductResponse(
+                entity.getId(),
+                entity.getCodigoBarras(),
+                entity.getNombre(),
+                entity.getStockActual(),
+                entity.getStockMinimo(),
+                entity.getPrecioNeto(),
+                entity.getStockActual() <= entity.getStockMinimo()
+        );
+    }
+}

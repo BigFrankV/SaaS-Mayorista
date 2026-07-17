@@ -1,0 +1,28 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+!.env.example
+
+# IntelliJ / VS Code
+.idea/
+*.iml
+.vscode/settings.json
+
+# Backend (Maven)
+backend/target/
+
+# Frontend (Node/Vite)
+frontend/node_modules/
+frontend/dist/
+
+# Docker data
+infra/docker/dev/.postgres-data/
+
+# Agent skill registry
+.atl/
+
+# OS
+Desktop.ini
