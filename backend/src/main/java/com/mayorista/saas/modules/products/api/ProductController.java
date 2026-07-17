@@ -4,7 +4,6 @@ import com.mayorista.saas.modules.products.application.ProductService;
 import com.mayorista.saas.modules.products.domain.ProductEntity;
 import jakarta.validation.Valid;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -42,7 +41,6 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    @Cacheable(value = "products", keyGenerator = "tenantAwareKeyGenerator")
     public ResponseEntity<ProductResponse> getById(@PathVariable UUID id) {
         ProductEntity entity = productService.getById(id);
         return ResponseEntity.ok(ProductResponse.from(entity));
