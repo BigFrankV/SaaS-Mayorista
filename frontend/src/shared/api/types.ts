@@ -43,4 +43,53 @@ export type UpdateUserPayload = {
   email?: string;
   nombre?: string;
   rol?: 'ADMIN' | 'VENDEDOR';
+  password?: string;
+};
+
+export type PageResponse<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+};
+
+export type UpdateProductPayload = {
+  nombre?: string;
+  stockActual?: number;
+  stockMinimo?: number;
+  precioNeto?: number;
+};
+
+export type SalePayload = {
+  tipoDocumento: 'BOLETA' | 'FACTURA';
+  rutCliente?: string;
+  giroCliente?: string;
+  items: Array<{ productoId: string; cantidad: number }>;
+};
+
+export type SaleResponse = {
+  id: string;
+  tenantId: string;
+  usuarioId: string;
+  tipoDocumento: string;
+  rutCliente?: string;
+  giroCliente?: string;
+  totalNeto: number;
+  iva: number;
+  total: number;
+  fechaVenta: string;
+  detalles: Array<{
+    id: string;
+    productoId: string;
+    nombreProducto: string;
+    cantidad: number;
+    precioNetoHistorico: number;
+  }>;
+};
+
+export type CartItem = {
+  producto: Product;
+  cantidad: number;
+  subtotal: number;
 };

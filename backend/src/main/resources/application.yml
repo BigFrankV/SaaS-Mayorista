@@ -41,6 +41,10 @@ management:
 
 app:
   security:
+    login:
+      rate-limit-per-minute: ${LOGIN_RATE_LIMIT_PER_MINUTE:10}
+      max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+      lockout-minutes: ${LOGIN_LOCKOUT_MINUTES:15}
     jwt:
       access-secret: ${JWT_ACCESS_SECRET:change_me_access_secret_very_long}
       refresh-secret: ${JWT_REFRESH_SECRET:change_me_refresh_secret_very_long}

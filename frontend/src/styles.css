@@ -81,14 +81,101 @@ th, td {
   color: #92400e;
 }
 
+.badge.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge.secondary {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #1f2937;
+}
+
 .nav {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
+/* POS layout */
+.pos-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.pos-left {
+  flex: 1 1 55%;
+  min-width: 0;
+}
+
+.pos-right {
+  flex: 1 1 45%;
+  min-width: 0;
+  position: sticky;
+  top: 1rem;
+}
+
+/* Cart quantity input — hide spinner */
+.pos-right input[type="number"]::-webkit-outer-spin-button,
+.pos-right input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pos-right input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 @media (max-width: 768px) {
   .row {
     flex-direction: column;
+  }
+  .pos-layout {
+    flex-direction: column;
+  }
+  .pos-left,
+  .pos-right {
+    flex: 1 1 100%;
+  }
+  .pos-right {
+    position: static;
   }
 }

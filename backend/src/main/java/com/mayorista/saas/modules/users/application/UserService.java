@@ -32,7 +32,7 @@ public class UserService {
 
     public Page<UserResponse> list(Pageable pageable) {
         UUID tenantId = requireTenant();
-        return userRepository.findAllByTenantIdAndActivoTrue(tenantId, pageable)
+        return userRepository.findAllByTenantId(tenantId, pageable)
                 .map(UserResponse::from);
     }
 
@@ -59,7 +59,7 @@ public class UserService {
         UUID tenantId = requireTenant();
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-        if (!user.getTenantId().equals(tenantId) || !user.isActivo()) {
+        if (!user.getTenantId().equals(tenantId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         }
         return UserResponse.from(user);
@@ -81,6 +81,9 @@ public class UserService {
         }
         if (request.rol() != null) {
             user.setRol(request.rol());
+        }
+        if (request.password() != null) {
+            user.setPasswordHash(passwordEncoder.encode(request.password()));
         }
         return UserResponse.from(userRepository.save(user));
     }

@@ -13,6 +13,7 @@ import com.mayorista.saas.modules.users.domain.UserRepository;
 import com.mayorista.saas.modules.users.domain.UserRole;
 import com.mayorista.saas.shared.security.JwtService;
 import com.mayorista.saas.shared.security.JwtTokenData;
+import com.mayorista.saas.shared.security.LoginLockoutService;
 import com.mayorista.saas.shared.security.TokenBlocklistService;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,6 +37,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TokenBlocklistService tokenBlocklistService;
+    private final LoginLockoutService loginLockoutService;
 
     public AuthService(
             AuthenticationManager authenticationManager,
@@ -44,7 +46,8 @@ public class AuthService {
             RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            TokenBlocklistService tokenBlocklistService
+            TokenBlocklistService tokenBlocklistService,
+            LoginLockoutService loginLockoutService
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
@@ -53,6 +56,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.tokenBlocklistService = tokenBlocklistService;
+        this.loginLockoutService = loginLockoutService;
     }
 
     @Transactional
@@ -86,11 +90,26 @@ public class AuthService {
 
     @Transactional
     public TokenResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
+        String email = request.email().toLowerCase();
 
-        UserEntity user = userRepository.findByEmailIgnoreCase(request.email())
+        if (loginLockoutService.isBlocked(email)) {
+            throw new IllegalStateException(
+                    "Cuenta bloqueada temporalmente por demasiados intentos fallidos. Intente en 15 minutos."
+            );
+        }
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, request.password())
+            );
+        } catch (Exception e) {
+            loginLockoutService.recordFailedAttempt(email);
+            throw e;
+        }
+
+        loginLockoutService.resetAttempts(email);
+
+        UserEntity user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
 
         return issueTokenPair(user);

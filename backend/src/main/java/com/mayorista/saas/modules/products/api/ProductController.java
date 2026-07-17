@@ -26,10 +26,18 @@ public class ProductController {
     }
 
     @GetMapping
-    @Cacheable(value = "products", keyGenerator = "tenantAwareKeyGenerator")
-    public ResponseEntity<Page<ProductResponse>> list(@PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
-        Page<ProductResponse> data = productService.list(pageable)
-                .map(ProductResponse::from);
+    public ResponseEntity<Page<ProductResponse>> list(
+            @PageableDefault(size = 20, sort = "nombre") Pageable pageable,
+            @RequestParam(required = false) Boolean stockBajo,
+            @RequestParam(required = false) String search) {
+        Page<ProductResponse> data;
+        if (stockBajo != null && stockBajo) {
+            data = productService.listByStockBajo(pageable).map(ProductResponse::from);
+        } else if (search != null && !search.isBlank()) {
+            data = productService.searchByCodigo(search, pageable).map(ProductResponse::from);
+        } else {
+            data = productService.list(pageable).map(ProductResponse::from);
+        }
         return ResponseEntity.ok(data);
     }
 

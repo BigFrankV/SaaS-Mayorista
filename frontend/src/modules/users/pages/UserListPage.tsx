@@ -6,8 +6,8 @@ export function UserListPage() {
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
-  const [showForm, setShowForm] = useState(false);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -25,12 +25,13 @@ export function UserListPage() {
 
   const handleCreate = async (payload: CreateUserPayload) => {
     await userApi.create(payload);
-    setShowForm(false);
+    setModalMode(null);
     await loadUsers();
   };
 
   const handleUpdate = async (id: string, payload: UpdateUserPayload) => {
     await userApi.update(id, payload);
+    setModalMode(null);
     setEditingUser(null);
     await loadUsers();
   };
@@ -41,6 +42,21 @@ export function UserListPage() {
     await loadUsers();
   };
 
+  const openCreate = () => {
+    setEditingUser(null);
+    setModalMode('create');
+  };
+
+  const openEdit = (user: UserResponse) => {
+    setEditingUser(user);
+    setModalMode('edit');
+  };
+
+  const closeModal = () => {
+    setModalMode(null);
+    setEditingUser(null);
+  };
+
   if (loading) return <p>Cargando...</p>;
   if (error) return <p style={{ color: '#b91c1c' }}>{error}</p>;
 
@@ -48,22 +64,21 @@ export function UserListPage() {
     <div>
       <div className="row">
         <h2>Usuarios del Tenant</h2>
-        <button onClick={() => setShowForm(true)}>Nuevo Usuario</button>
+        <button onClick={openCreate}>Nuevo Usuario</button>
       </div>
 
-      {showForm && (
-        <UserForm
-          onSubmit={handleCreate}
-          onCancel={() => setShowForm(false)}
-        />
-      )}
-
-      {editingUser && (
-        <UserForm
-          initial={editingUser}
-          onSubmit={(data) => handleUpdate(editingUser.id, data)}
-          onCancel={() => setEditingUser(null)}
-        />
+      {modalMode && (
+        <Modal onClose={closeModal}>
+          <UserForm
+            mode={modalMode}
+            initial={editingUser ?? undefined}
+            onSubmit={modalMode === 'create'
+              ? (data) => handleCreate(data as CreateUserPayload)
+              : (data) => handleUpdate(editingUser!.id, data as UpdateUserPayload)
+            }
+            onCancel={closeModal}
+          />
+        </Modal>
       )}
 
       <table>
@@ -72,7 +87,7 @@ export function UserListPage() {
             <th>Nombre</th>
             <th>Email</th>
             <th>Rol</th>
-            <th>Activo</th>
+            <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -82,9 +97,14 @@ export function UserListPage() {
               <td>{u.nombre}</td>
               <td>{u.email}</td>
               <td><span className={u.rol === 'ADMIN' ? 'badge' : ''}>{u.rol}</span></td>
-              <td>{u.activo ? 'Sí' : 'No'}</td>
               <td>
-                <button onClick={() => setEditingUser(u)}>Editar</button>
+                {u.activo
+                  ? <span className="badge success">Activo</span>
+                  : <span className="badge secondary">Inactivo</span>
+                }
+              </td>
+              <td>
+                <button onClick={() => openEdit(u)}>Editar</button>
                 <button className="secondary" onClick={() => handleDelete(u.id)}>Eliminar</button>
               </td>
             </tr>
@@ -95,11 +115,24 @@ export function UserListPage() {
   );
 }
 
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>&times;</button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function UserForm({
+  mode,
   initial,
   onSubmit,
   onCancel,
 }: {
+  mode: 'create' | 'edit';
   initial?: UserResponse;
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
@@ -114,8 +147,8 @@ function UserForm({
     e.preventDefault();
     setSubmitting(true);
     try {
-      const payload = initial
-        ? { email: email || undefined, nombre: nombre || undefined, rol }
+      const payload = mode === 'edit'
+        ? { email: email || undefined, nombre: nombre || undefined, rol, ...(password ? { password } : {}) }
         : { email, password, nombre, rol };
       await onSubmit(payload);
     } finally {
@@ -124,18 +157,20 @@ function UserForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.75rem', maxWidth: 400, margin: '1rem 0' }}>
-      <h3>{initial ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
-      <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" required={!initial} />
-      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" required={!initial} />
-      {!initial && (
+    <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.75rem', minWidth: 340 }}>
+      <h3 style={{ marginTop: 0 }}>{mode === 'edit' ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+      <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" required={mode === 'create'} />
+      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" required={mode === 'create'} />
+      {mode === 'create' ? (
         <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña" type="password" required />
+      ) : (
+        <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Nueva contraseña (opcional)" type="password" />
       )}
       <select value={rol} onChange={(e) => setRol(e.target.value as 'ADMIN' | 'VENDEDOR')}>
         <option value="VENDEDOR">Vendedor</option>
         <option value="ADMIN">Administrador</option>
       </select>
-      <div className="row">
+      <div className="row" style={{ marginTop: '0.5rem' }}>
         <button type="submit" disabled={submitting}>{submitting ? 'Guardando...' : 'Guardar'}</button>
         <button type="button" className="secondary" onClick={onCancel}>Cancelar</button>
       </div>

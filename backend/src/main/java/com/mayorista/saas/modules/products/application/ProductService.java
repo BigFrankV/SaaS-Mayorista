@@ -29,6 +29,16 @@ public class ProductService {
         return productRepository.findAllByTenantId(tenantId, pageable);
     }
 
+    public Page<ProductEntity> listByStockBajo(Pageable pageable) {
+        UUID tenantId = TenantContext.getTenantId();
+        return productRepository.findByStockBajo(tenantId, pageable);
+    }
+
+    public Page<ProductEntity> searchByCodigo(String query, Pageable pageable) {
+        UUID tenantId = TenantContext.getTenantId();
+        return productRepository.search(tenantId, query, pageable);
+    }
+
     public ProductEntity getById(UUID id) {
         UUID tenantId = TenantContext.getTenantId();
         return productRepository.findByIdAndTenantId(id, tenantId)
