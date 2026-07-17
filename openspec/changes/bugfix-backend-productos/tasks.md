@@ -32,10 +32,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Schema + DTOs
 
-- [ ] 2.1 — Create `V2__add_product_details.sql`: `ALTER TABLE productos ADD COLUMN categoria VARCHAR(255), ADD COLUMN descripcion TEXT`
-- [ ] 2.2 — `ProductEntity.java`: Add `categoria` (String) and `descripcion` (String) with `@Column` annotations + getters/setters
-- [ ] 2.3 — `CreateProductRequest.java` / `UpdateProductRequest.java`: Add `@Size(max=255) String categoria`, `String descripcion` to both records
-- [ ] 2.4 — `ProductResponse.java`: Add `categoria`, `descripcion` fields to record; update `from()` to map from entity
+- [x] 2.1 — Create `V2__add_product_details.sql`: `ALTER TABLE productos ADD COLUMN categoria VARCHAR(255), ADD COLUMN descripcion TEXT`
+- [x] 2.2 — `ProductEntity.java`: Add `categoria` (String) and `descripcion` (String) with `@Column` annotations + getters/setters
+- [x] 2.3 — `CreateProductRequest.java` / `UpdateProductRequest.java`: Add `@Size(max=255) String categoria`, `String descripcion` to both records
+- [x] 2.4 — `ProductResponse.java`: Add `categoria`, `descripcion` fields to record; update `from()` to map from entity
 
 ## Phase 3: Verification
 

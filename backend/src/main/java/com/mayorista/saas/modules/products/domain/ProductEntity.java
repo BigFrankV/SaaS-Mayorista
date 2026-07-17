@@ -42,6 +42,12 @@ public class ProductEntity implements Serializable {
     @Column(name = "actualizado_en", nullable = false)
     private Instant actualizadoEn;
 
+    @Column(name = "categoria")
+    private String categoria;
+
+    @Column(name = "descripcion", columnDefinition = "TEXT")
+    private String descripcion;
+
     public UUID getId() {
         return id;
     }
@@ -78,6 +84,14 @@ public class ProductEntity implements Serializable {
         return actualizadoEn;
     }
 
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
     public void setId(UUID id) {
         this.id = id;
     }
@@ -112,5 +126,13 @@ public class ProductEntity implements Serializable {
 
     public void setActualizadoEn(Instant actualizadoEn) {
         this.actualizadoEn = actualizadoEn;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 }
