@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SaaS Mayorista — Mockup de Diseño</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSS: Atomic Design -->
+  <link rel="stylesheet" href="css/01-tokens.css" />
+  <link rel="stylesheet" href="css/02-base.css" />
+  <link rel="stylesheet" href="css/03-atomos.css" />
+  <link rel="stylesheet" href="css/04-moleculas.css" />
+  <link rel="stylesheet" href="css/05-organismos.css" />
+  <link rel="stylesheet" href="css/06-paginas.css" />
+
+  <style>
+    .showcase { min-height: 100vh; background: var(--color-bg); display: flex; flex-direction: column; }
+    .showcase-nav {
+      display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+      padding: var(--space-4) var(--space-6); background: var(--color-sidebar); flex-wrap: wrap;
+    }
+    .showcase-nav .nav-title {
+      color: white; font-weight: var(--font-bold); font-size: var(--text-sm);
+      margin-right: var(--space-4); display: flex; align-items: center; gap: var(--space-2);
+    }
+    .showcase-nav .nav-title .dot { width: 8px; height: 8px; background: var(--color-primary); border-radius: var(--radius-full); display: inline-block; }
+    .showcase-nav a {
+      padding: 0.375rem 0.875rem; border-radius: var(--radius-md); font-size: var(--text-sm);
+      font-weight: var(--font-medium); color: var(--color-text-sidebar);
+      transition: all var(--transition-fast); cursor: pointer; text-decoration: none;
+    }
+    .showcase-nav a:hover { background: var(--color-sidebar-hover); color: white; }
+    .showcase-nav a.active { background: var(--color-primary); color: white; }
+    .showcase-content { flex: 1; }
+    .page-container { min-height: calc(100vh - 52px); }
+  </style>
+</head>
+<body>
+  <div class="showcase">
+    <nav class="showcase-nav">
+      <div class="nav-title"><span class="dot"></span>SaaS Mayorista — Mockup</div>
+      <a class="active" href="#" onclick="showLanding(); return false;">Inicio</a>
+      <a href="#" onclick="loadPage('login'); return false;">Login</a>
+      <a href="#" onclick="loadPage('dashboard'); return false;">Dashboard</a>
+      <a href="#" onclick="loadPage('productos'); return false;">Productos</a>
+      <a href="#" onclick="loadPage('pos'); return false;">POS</a>
+      <a href="#" onclick="loadPage('usuarios'); return false;">Usuarios</a>
+    </nav>
+    <div class="showcase-content">
+      <div id="page-container" class="page-container"></div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    /* Init: show landing on load */
+    document.addEventListener('DOMContentLoaded', function () {
+      showLanding();
+    });
+  </script>
+</body>
+</html>
