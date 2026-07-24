@@ -4,6 +4,7 @@ import type { CartItem } from '../../../shared/api/types';
 import { salesApi } from '../api/salesApi';
 import { ProductSearch } from '../components/ProductSearch';
 import { CartItemRow } from '../components/CartItem';
+import { NotificationBanner } from '../../../shared/ui/NotificationBanner';
 
 // ── Reducer ──────────────────────────────────────────────
 
@@ -119,7 +120,7 @@ export function POSPage() {
       dispatch({ type: 'CLEAR' });
       setRutCliente('');
       setGiroCliente('');
-      setNotification({ type: 'success', message: '✅ Venta registrada exitosamente' });
+      setNotification({ type: 'success', message: 'Venta registrada exitosamente' });
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
@@ -137,35 +138,14 @@ export function POSPage() {
 
   return (
     <div>
-      {/* Notification banner */}
       {notification && (
-        <div
-          className={`card`}
-          style={{
-            marginBottom: '1rem',
-            backgroundColor: notification.type === 'success' ? '#d1fae5' : '#fee2e2',
-            color: notification.type === 'success' ? '#065f46' : '#991b1b',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}
-        >
-          <span>{notification.message}</span>
-          <button
-            type="button"
-            onClick={clearNotification}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'inherit',
-              cursor: 'pointer',
-              fontSize: '1.25rem',
-              padding: '0 0.25rem'
-            }}
-            aria-label="Cerrar notificación"
-          >
-            ✕
-          </button>
+        <div style={{ marginBottom: '1rem' }}>
+          <NotificationBanner
+            type={notification.type}
+            message={notification.message}
+            onClose={clearNotification}
+            autoCloseMs={notification.type === 'success' ? 4000 : undefined}
+          />
         </div>
       )}
 
@@ -177,111 +157,108 @@ export function POSPage() {
 
         {/* Right panel — Cart */}
         <div className="pos-right">
-          <div className="card">
-            <h3>Carrito ({cart.length} {cart.length === 1 ? 'producto' : 'productos'})</h3>
-
-            {/* Document type */}
-            <div style={{ marginBottom: '0.75rem' }}>
-              <label style={{ marginRight: '0.5rem', fontWeight: 600 }}>Tipo Documento:</label>
-              <select
-                value={tipoDocumento}
-                onChange={(e) => setTipoDocumento(e.target.value as 'BOLETA' | 'FACTURA')}
-              >
-                <option value="BOLETA">BOLETA</option>
-                <option value="FACTURA">FACTURA</option>
-              </select>
+          <div className="pos-cart">
+            <div className="pos-cart-header">
+              <h3>Carrito de Compra</h3>
+              <span className="badge badge-info">{cart.length}</span>
             </div>
 
-            {/* Customer fields for FACTURA */}
-            {tipoDocumento === 'FACTURA' && (
-              <div style={{ marginBottom: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  placeholder="RUT Cliente"
-                  value={rutCliente}
-                  onChange={(e) => setRutCliente(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <input
-                  type="text"
-                  placeholder="Giro Cliente"
-                  value={giroCliente}
-                  onChange={(e) => setGiroCliente(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-              </div>
-            )}
-
-            {/* Cart items table */}
-            {cart.length === 0 ? (
-              <p style={{ color: '#64748b', textAlign: 'center', padding: '2rem 0' }}>
-                Carrito vacío. Busca y agrega productos desde el panel izquierdo.
-              </p>
-            ) : (
-              <>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Producto</th>
-                      <th>Cantidad</th>
-                      <th style={{ textAlign: 'right' }}>P. Unitario</th>
-                      <th style={{ textAlign: 'right' }}>Subtotal</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cart.map((item) => (
-                      <CartItemRow
-                        key={item.producto.id}
-                        item={item}
-                        onUpdateCantidad={handleUpdateCantidad}
-                        onRemove={handleRemove}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Summary */}
-                <div
-                  style={{
-                    marginTop: '1rem',
-                    paddingTop: '0.75rem',
-                    borderTop: '2px solid #e2e8f0'
-                  }}
+            <div style={{ padding: '0 1.25rem', paddingTop: '0.75rem' }}>
+              {/* Document type selector */}
+              <div className="pos-doc-selector">
+                <button
+                  type="button"
+                  className={`doc-btn${tipoDocumento === 'BOLETA' ? ' active' : ''}`}
+                  onClick={() => setTipoDocumento('BOLETA')}
                 >
-                  <div className="row" style={{ justifyContent: 'flex-end', gap: '2rem' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Neto</div>
-                      <div style={{ fontWeight: 600 }}>{formatCurrency(totalNeto)}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: '#64748b', fontSize: '0.875rem' }}>IVA (19%)</div>
-                      <div style={{ fontWeight: 600 }}>{formatCurrency(iva)}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Total</div>
-                      <div style={{ fontWeight: 700, fontSize: '1.25rem', color: '#0f766e' }}>
-                        {formatCurrency(total)}
-                      </div>
-                    </div>
+                  Boleta
+                </button>
+                <button
+                  type="button"
+                  className={`doc-btn${tipoDocumento === 'FACTURA' ? ' active' : ''}`}
+                  onClick={() => setTipoDocumento('FACTURA')}
+                >
+                  Factura
+                </button>
+              </div>
+
+              {/* Factura fields (mock — datos estáticos en el form) */}
+              {tipoDocumento === 'FACTURA' && (
+                <div className="pos-factura-fields">
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="RUT Cliente"
+                    value={rutCliente}
+                    onChange={(e) => setRutCliente(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Giro Cliente"
+                    value={giroCliente}
+                    onChange={(e) => setGiroCliente(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Cart body */}
+            <div className="pos-cart-body">
+              {cart.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="21" r="1" />
+                      <circle cx="20" cy="21" r="1" />
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    </svg>
+                  </div>
+                  <p className="empty-title">Carrito vacío</p>
+                  <p className="empty-desc">Busca y agrega productos desde el panel izquierdo.</p>
+                </div>
+              ) : (
+                <div className="pos-cart-items">
+                  {cart.map((item) => (
+                    <CartItemRow
+                      key={item.producto.id}
+                      item={item}
+                      onUpdateCantidad={handleUpdateCantidad}
+                      onRemove={handleRemove}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Cart footer with summary */}
+            {cart.length > 0 && (
+              <>
+                <div className="pos-cart-summary">
+                  <div className="summary-row">
+                    <span>Neto</span>
+                    <span>{formatCurrency(totalNeto)}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>IVA (19%)</span>
+                    <span>{formatCurrency(iva)}</span>
+                  </div>
+                  <div className="summary-row total">
+                    <span>Total</span>
+                    <span className="amount">{formatCurrency(total)}</span>
                   </div>
                 </div>
 
-                {/* Confirm button */}
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  disabled={submitting}
-                  style={{
-                    width: '100%',
-                    marginTop: '1rem',
-                    padding: '0.75rem',
-                    fontSize: '1.1rem',
-                    fontWeight: 700
-                  }}
-                >
-                  {submitting ? 'Registrando...' : 'Confirmar Venta'}
-                </button>
+                <div className="pos-cart-footer">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-block btn-lg"
+                    onClick={handleConfirm}
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Registrando...' : 'Confirmar Venta'}
+                  </button>
+                </div>
               </>
             )}
           </div>

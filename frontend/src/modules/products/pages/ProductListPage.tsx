@@ -1,29 +1,52 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { productsApi, type CreateProductPayload } from '../../../shared/api/productsApi';
 import type { PageResponse, Product, UpdateProductPayload } from '../../../shared/api/types';
+import { Modal } from '../../../shared/ui/Modal';
+
+const CATEGORIAS = [
+  { id: 'abarrotes', nombre: 'Abarrotes' },
+  { id: 'lacteos', nombre: 'Lácteos' },
+  { id: 'bebidas', nombre: 'Bebidas' },
+  { id: 'limpieza', nombre: 'Limpieza' },
+  { id: 'congelados', nombre: 'Congelados' },
+];
 
 export function ProductListPage() {
-  const [page, setPage] = useState<PageResponse<Product>>({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+  const [page, setPage] = useState<PageResponse<Product>>({
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+    number: 0,
+    size: 20,
+  });
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [search, setSearch] = useState('');
+  const [categoria, setCategoria] = useState('');
 
-  const load = async (p = currentPage) => {
-    setLoading(true);
-    try {
-      const data = await productsApi.list(p, 20);
-      setPage(data);
-      setCurrentPage(data.number);
-    } catch {
-      setError('Error al cargar productos');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const load = useCallback(
+    async (p = currentPage) => {
+      setLoading(true);
+      try {
+        const data = await productsApi.list(p, 20, { search: search || undefined });
+        setPage(data);
+        setCurrentPage(data.number);
+      } catch {
+        setError('Error al cargar productos');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage, search],
+  );
 
-  useEffect(() => { void load(0); }, []);
+  useEffect(() => {
+    void load(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreate = async (payload: CreateProductPayload) => {
     await productsApi.create(payload);
@@ -59,81 +82,137 @@ export function ProductListPage() {
     setEditingProduct(null);
   };
 
+  const handleFilter = () => {
+    void load(0);
+  };
+
   if (loading && page.content.length === 0) return <p>Cargando...</p>;
   if (error) return <p style={{ color: '#b91c1c' }}>{error}</p>;
 
   return (
-    <div>
-      <div className="row">
-        <h2>Inventario ({page.totalElements} productos)</h2>
-        <button onClick={openCreate}>Nuevo Producto</button>
+    <div className="products-page">
+      <div className="page-header">
+        <h1>
+          Inventario <span className="header-count">({page.totalElements} productos)</span>
+        </h1>
+        <button className="btn btn-primary" onClick={openCreate}>
+          Nuevo Producto
+        </button>
       </div>
 
-      {modalMode && (
-        <Modal onClose={closeModal}>
-          <ProductForm
-            mode={modalMode}
-            initial={editingProduct ?? undefined}
-            onSubmit={modalMode === 'create'
-              ? (data) => handleCreate(data as CreateProductPayload)
-              : (data) => handleUpdate(editingProduct!.id, data as UpdateProductPayload)
-            }
-            onCancel={closeModal}
-          />
-        </Modal>
-      )}
-
-      <table>
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Stock</th>
-            <th>Mínimo</th>
-            <th>Precio</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {page.content.map((p) => (
-            <tr key={p.id}>
-              <td>{p.codigoBarras}</td>
-              <td>{p.nombre}</td>
-              <td>{p.stockActual}</td>
-              <td>{p.stockMinimo}</td>
-              <td>${p.precioNeto.toLocaleString()}</td>
-              <td>
-                {p.stockBajo
-                  ? <span className="badge warn">Stock bajo</span>
-                  : <span className="badge success">OK</span>
-                }
-              </td>
-              <td>
-                <button onClick={() => openEdit(p)}>Editar</button>
-                <button className="secondary" onClick={() => handleDelete(p.id)}>Eliminar</button>
-              </td>
-            </tr>
+      <div className="filter-bar">
+        <input
+          className="input"
+          placeholder="Buscar producto..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select className="select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+          <option value="">Todas las categorías</option>
+          {CATEGORIAS.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.nombre}
+            </option>
           ))}
-        </tbody>
-      </table>
-
-      <div className="row" style={{ marginTop: '1rem', alignItems: 'center', gap: '1rem' }}>
-        <button disabled={page.number === 0} onClick={() => load(page.number - 1)}>Anterior</button>
-        <span>Página {page.number + 1} de {page.totalPages}</span>
-        <button disabled={page.number >= page.totalPages - 1} onClick={() => load(page.number + 1)}>Siguiente</button>
+        </select>
+        <button className="btn btn-primary" onClick={handleFilter}>
+          Filtrar
+        </button>
       </div>
-    </div>
-  );
-}
 
-function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>&times;</button>
-        {children}
+      <div className="card">
+        <div className="table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Stock</th>
+                <th>Stock Mín.</th>
+                <th>Precio Venta</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {page.content.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.codigoBarras}</td>
+                  <td>{p.nombre}</td>
+                  <td>{p.stockActual}</td>
+                  <td>{p.stockMinimo}</td>
+                  <td>${p.precioNeto.toLocaleString()}</td>
+                  <td>
+                    {p.stockBajo ? (
+                      <span className="badge badge-warning">Stock bajo</span>
+                    ) : (
+                      <span className="badge badge-success">OK</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="actions">
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(p)}>
+                        Editar
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(p.id)}>
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <div className="pagination">
+        <button
+          className="page-btn"
+          disabled={page.number === 0}
+          onClick={() => load(page.number - 1)}
+        >
+          ‹ Anterior
+        </button>
+        <span className="page-info">
+          Página {page.number + 1} de {page.totalPages}
+        </span>
+        <button
+          className="page-btn"
+          disabled={page.number >= page.totalPages - 1}
+          onClick={() => load(page.number + 1)}
+        >
+          Siguiente ›
+        </button>
+      </div>
+
+      <Modal
+        open={modalMode !== null}
+        onClose={closeModal}
+        title={modalMode === 'edit' ? 'Editar Producto' : 'Nuevo Producto'}
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={closeModal}>
+              Cancelar
+            </button>
+            <button className="btn btn-primary" type="submit" form="product-form">
+              Guardar
+            </button>
+          </>
+        }
+      >
+        <ProductForm
+          mode={modalMode ?? 'create'}
+          initial={editingProduct ?? undefined}
+          onSubmit={async (data) => {
+            if (modalMode === 'create') {
+              await handleCreate(data as CreateProductPayload);
+            } else if (editingProduct) {
+              await handleUpdate(editingProduct.id, data as UpdateProductPayload);
+            }
+          }}
+        />
+      </Modal>
     </div>
   );
 }
@@ -142,27 +221,28 @@ function ProductForm({
   mode,
   initial,
   onSubmit,
-  onCancel,
 }: {
   mode: 'create' | 'edit';
   initial?: Product;
   onSubmit: (data: any) => Promise<void>;
-  onCancel: () => void;
 }) {
   const [codigoBarras, setCodigoBarras] = useState(initial?.codigoBarras ?? '');
   const [nombre, setNombre] = useState(initial?.nombre ?? '');
+  const [categoria, setCategoria] = useState('');
   const [stockActual, setStockActual] = useState(initial?.stockActual ?? 0);
   const [stockMinimo, setStockMinimo] = useState(initial?.stockMinimo ?? 10);
   const [precioNeto, setPrecioNeto] = useState(initial?.precioNeto ?? 1000);
+  const [descripcion, setDescripcion] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const payload = mode === 'create'
-        ? { codigoBarras, nombre, stockActual, stockMinimo, precioNeto }
-        : { nombre, stockActual, stockMinimo, precioNeto };
+      const payload =
+        mode === 'create'
+          ? { codigoBarras, nombre, stockActual, stockMinimo, precioNeto }
+          : { nombre, stockActual, stockMinimo, precioNeto };
       await onSubmit(payload);
     } finally {
       setSubmitting(false);
@@ -170,19 +250,100 @@ function ProductForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.75rem', minWidth: 340 }}>
-      <h3 style={{ marginTop: 0 }}>{mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto'}</h3>
-      {mode === 'create' && (
-        <input value={codigoBarras} onChange={(e) => setCodigoBarras(e.target.value)} placeholder="Código de barras" required />
-      )}
-      <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" required />
-      <input type="number" value={stockActual} onChange={(e) => setStockActual(Number(e.target.value))} placeholder="Stock actual" required />
-      <input type="number" value={stockMinimo} onChange={(e) => setStockMinimo(Number(e.target.value))} placeholder="Stock mínimo" required />
-      <input type="number" value={precioNeto} onChange={(e) => setPrecioNeto(Number(e.target.value))} placeholder="Precio neto" required />
-      <div className="row" style={{ marginTop: '0.5rem' }}>
-        <button type="submit" disabled={submitting}>{submitting ? 'Guardando...' : 'Guardar'}</button>
-        <button type="button" className="secondary" onClick={onCancel}>Cancelar</button>
+    <form id="product-form" onSubmit={handleSubmit}>
+      <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+        <label htmlFor="prod-nombre">Nombre</label>
+        <input
+          id="prod-nombre"
+          className="input"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="Nombre del producto"
+          required
+        />
       </div>
+
+      {mode === 'create' && (
+        <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+          <label htmlFor="prod-codigo">Código de barras</label>
+          <input
+            id="prod-codigo"
+            className="input"
+            value={codigoBarras}
+            onChange={(e) => setCodigoBarras(e.target.value)}
+            placeholder="Código de barras"
+            required
+          />
+        </div>
+      )}
+
+      <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+        <label htmlFor="prod-categoria">Categoría</label>
+        <select
+          id="prod-categoria"
+          className="select"
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+        >
+          <option value="">Seleccionar categoría</option>
+          {CATEGORIAS.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+        <label htmlFor="prod-stock">Stock actual</label>
+        <input
+          id="prod-stock"
+          className="input"
+          type="number"
+          value={stockActual}
+          onChange={(e) => setStockActual(Number(e.target.value))}
+          required
+        />
+      </div>
+
+      <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+        <label htmlFor="prod-stock-min">Stock mínimo</label>
+        <input
+          id="prod-stock-min"
+          className="input"
+          type="number"
+          value={stockMinimo}
+          onChange={(e) => setStockMinimo(Number(e.target.value))}
+          required
+        />
+      </div>
+
+      <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+        <label htmlFor="prod-precio">Precio de venta</label>
+        <input
+          id="prod-precio"
+          className="input"
+          type="number"
+          value={precioNeto}
+          onChange={(e) => setPrecioNeto(Number(e.target.value))}
+          required
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="prod-desc">Descripción</label>
+        <textarea
+          id="prod-desc"
+          className="textarea"
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          placeholder="Descripción del producto (opcional)"
+          rows={3}
+        />
+      </div>
+
+      {/* Hidden submit to allow Enter key */}
+      <button type="submit" hidden disabled={submitting} />
     </form>
   );
 }

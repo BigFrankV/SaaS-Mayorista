@@ -93,3 +93,21 @@ export type CartItem = {
   cantidad: number;
   subtotal: number;
 };
+
+export type DashboardKPI = {
+  totalVentasHoy: number;
+  productosBajoStock: number;
+  usuariosActivos: number;
+  ventasDelMes: number;
+  cambioVsAyer: number;
+  cambioVsMesAnterior: number;
+};
+
+export type VentaResumen = {
+  folio: string;
+  cliente: string;
+  rut: string;
+  total: number;
+  tipo: 'BOLETA' | 'FACTURA';
+  fecha: string;
+};

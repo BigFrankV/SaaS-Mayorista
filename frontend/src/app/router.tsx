@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes, Link } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoginPage } from '../modules/auth/pages/LoginPage';
 import { ProductListPage } from '../modules/products/pages/ProductListPage';
 import { POSPage } from '../modules/sales/pages/POSPage';
@@ -8,42 +8,21 @@ import { UserListPage } from '../modules/users/pages/UserListPage';
 import { RoleRoute } from '../modules/users/components/RoleRoute';
 import { useAuthStore } from '../shared/store/authStore';
 import { authApi } from '../shared/api/authApi';
+import { AppLayout } from '../shared/ui/AppLayout';
 
-function Layout({ children }: { children: React.ReactNode }) {
-  const clear = useAuthStore((s) => s.clear);
-  const refreshToken = useAuthStore((s) => s.refreshToken);
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = useAuthStore((s) => s.isAdmin);
+const routeMeta: Record<string, { title: string; breadcrumb: string }> = {
+  '/dashboard': { title: 'Resumen General', breadcrumb: 'Dashboard' },
+  '/products': { title: 'Inventario', breadcrumb: 'Productos' },
+  '/pos': { title: 'Punto de Venta', breadcrumb: 'POS' },
+  '/users': { title: 'Gestión de Usuarios', breadcrumb: 'Usuarios' },
+};
 
-  return (
-    <div className="container">
-      <div className="nav">
-        <Link className="card" to="/dashboard">Dashboard</Link>
-        <Link className="card" to="/products">Productos</Link>
-        <Link className="card" to="/pos">POS</Link>
-        {isAdmin() && <Link className="card" to="/users">Usuarios</Link>}
-        <span style={{ marginLeft: 'auto', padding: '0.5rem' }}>
-          {user?.nombre ?? ''} ({user?.rol ?? ''})
-        </span>
-        <button
-          className="secondary"
-          onClick={() => {
-            if (refreshToken) {
-              void fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken })
-              });
-            }
-            clear();
-          }}
-        >
-          Cerrar sesion
-        </button>
-      </div>
-      {children}
-    </div>
-  );
+function deriveRouteMeta(pathname: string) {
+  const meta = routeMeta[pathname];
+  if (meta) {
+    return { title: meta.title, breadcrumb: [{ label: meta.breadcrumb }] };
+  }
+  return { title: 'SaaS Mayorista', breadcrumb: [] };
 }
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -64,6 +43,15 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   return children;
 }
 
+function PageWithLayout({ children, path }: { children: JSX.Element; path: string }) {
+  const { title, breadcrumb } = deriveRouteMeta(path);
+  return (
+    <AppLayout title={title} breadcrumb={breadcrumb}>
+      {children}
+    </AppLayout>
+  );
+}
+
 export function AppRouter() {
   return (
     <Routes>
@@ -72,7 +60,9 @@ export function AppRouter() {
         path="/products"
         element={
           <ProtectedRoute>
-            <Layout><ProductListPage /></Layout>
+            <PageWithLayout path="/products">
+              <ProductListPage />
+            </PageWithLayout>
           </ProtectedRoute>
         }
       />
@@ -80,7 +70,9 @@ export function AppRouter() {
         path="/pos"
         element={
           <ProtectedRoute>
-            <Layout><POSPage /></Layout>
+            <PageWithLayout path="/pos">
+              <POSPage />
+            </PageWithLayout>
           </ProtectedRoute>
         }
       />
@@ -88,7 +80,9 @@ export function AppRouter() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Layout><DashboardPage /></Layout>
+            <PageWithLayout path="/dashboard">
+              <DashboardPage />
+            </PageWithLayout>
           </ProtectedRoute>
         }
       />
@@ -97,7 +91,9 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             <RoleRoute roles={['ADMIN']}>
-              <Layout><UserListPage /></Layout>
+              <PageWithLayout path="/users">
+                <UserListPage />
+              </PageWithLayout>
             </RoleRoute>
           </ProtectedRoute>
         }
