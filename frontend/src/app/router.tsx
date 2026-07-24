@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { LandingPage } from '../modules/landing/pages/LandingPage';
 import { LoginPage } from '../modules/auth/pages/LoginPage';
 import { ProductListPage } from '../modules/products/pages/ProductListPage';
 import { POSPage } from '../modules/sales/pages/POSPage';
@@ -55,6 +56,7 @@ function PageWithLayout({ children, path }: { children: JSX.Element; path: strin
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/products"
@@ -98,7 +100,7 @@ export function AppRouter() {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
