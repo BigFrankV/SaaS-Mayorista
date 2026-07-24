@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { MeResponse } from '../api/types';
+import type { MeResponse, UserRol } from '../api/types';
 
 type AuthState = {
   accessToken: string | null;
@@ -9,6 +9,7 @@ type AuthState = {
   setUser: (user: MeResponse) => void;
   clear: () => void;
   isAdmin: () => boolean;
+  hasRole: (...roles: UserRol[]) => boolean;
 };
 
 const ACCESS_KEY = 'mayorista_access_token';
@@ -30,4 +31,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ accessToken: null, refreshToken: null, user: null });
   },
   isAdmin: () => get().user?.rol === 'ADMIN',
+  hasRole: (...roles) => {
+    const user = get().user;
+    if (!user) return false;
+    return roles.includes(user.rol);
+  },
 }));

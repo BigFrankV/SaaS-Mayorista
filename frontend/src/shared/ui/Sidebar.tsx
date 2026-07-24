@@ -1,10 +1,15 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import type { MeResponse } from '../api/types';
+import type { MeResponse, UserRol } from '../api/types';
+
+const ROLE_LABELS: Record<UserRol, string> = {
+  ADMIN: 'Administrador',
+  VENDEDOR: 'Vendedor',
+  BODEGUERO: 'Bodeguero',
+  CONTADOR: 'Contador',
+};
 
 type SidebarProps = {
   user: MeResponse | null;
-  isAdmin: boolean;
 };
 
 const navItems = [
@@ -19,6 +24,7 @@ const navItems = [
         <rect x="3" y="14" width="7" height="7" />
       </svg>
     ),
+    roles: ['ADMIN', 'VENDEDOR', 'BODEGUERO', 'CONTADOR'],
   },
   {
     label: 'Productos',
@@ -30,7 +36,8 @@ const navItems = [
         <line x1="12" y1="22.08" x2="12" y2="12" />
       </svg>
     ),
-    badge: '342',
+    roles: ['ADMIN', 'VENDEDOR', 'BODEGUERO'],
+    badge: '',
   },
   {
     label: 'POS',
@@ -41,6 +48,7 @@ const navItems = [
         <line x1="1" y1="10" x2="23" y2="10" />
       </svg>
     ),
+    roles: ['ADMIN', 'VENDEDOR'],
   },
   {
     label: 'Usuarios',
@@ -53,8 +61,8 @@ const navItems = [
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
+    roles: ['ADMIN'],
     badge: 'Admin',
-    adminOnly: true,
   },
 ];
 
@@ -67,9 +75,10 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function Sidebar({ user, isAdmin }: SidebarProps) {
+export function Sidebar({ user }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const userRol = user?.rol as UserRol | undefined;
 
   const handleNav = (path: string) => {
     navigate(path);
@@ -88,7 +97,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       <nav className="sidebar-nav">
         <div className="nav-label">Navegación</div>
         {navItems.map((item) => {
-          if (item.adminOnly && !isAdmin) return null;
+          if (userRol && !item.roles.includes(userRol)) return null;
 
           const isActive = location.pathname === item.path ||
             (item.path === '/dashboard' && location.pathname === '/');
@@ -106,7 +115,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
               <span className="nav-icon">{item.icon}</span>
               {item.label}
               {item.badge && (
-                <span className={`badge ${item.adminOnly ? 'badge-info' : 'badge-secondary'} nav-badge`}>
+                <span className="badge badge-info nav-badge">
                   {item.badge}
                 </span>
               )}
@@ -122,7 +131,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
         <div className="user-info">
           <div className="user-name">{user?.nombre ?? 'Sin sesión'}</div>
           <div className="user-role">
-            {user?.rol === 'ADMIN' ? 'Administrador' : user?.rol === 'VENDEDOR' ? 'Vendedor' : ''}
+            {user ? ROLE_LABELS[user.rol as UserRol] ?? user.rol : ''}
           </div>
         </div>
       </div>

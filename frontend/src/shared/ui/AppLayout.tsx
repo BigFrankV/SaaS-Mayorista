@@ -14,7 +14,6 @@ type AppLayoutProps = {
 export function AppLayout({ children, title, breadcrumb = [] }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  const isAdmin = useAuthStore((s) => s.isAdmin);
   const refreshToken = useAuthStore((s) => s.refreshToken);
   const clear = useAuthStore((s) => s.clear);
 
@@ -67,7 +66,7 @@ export function AppLayout({ children, title, breadcrumb = [] }: AppLayoutProps) 
       )}
 
       <div className={`sidebar${sidebarOpen ? ' open' : ''}`}>
-        <Sidebar user={user as MeResponse | null} isAdmin={isAdmin()} />
+        <Sidebar user={user as MeResponse | null} />
       </div>
 
       <Topbar

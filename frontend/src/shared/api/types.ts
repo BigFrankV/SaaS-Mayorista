@@ -17,19 +17,21 @@ export type Product = {
   stockBajo: boolean;
 };
 
+export type UserRol = 'ADMIN' | 'VENDEDOR' | 'BODEGUERO' | 'CONTADOR';
+
 export type MeResponse = {
   userId: string;
   tenantId: string;
   email: string;
   nombre: string;
-  rol: 'ADMIN' | 'VENDEDOR';
+  rol: UserRol;
 };
 
 export type UserResponse = {
   id: string;
   email: string;
   nombre: string;
-  rol: 'ADMIN' | 'VENDEDOR';
+  rol: UserRol;
   activo: boolean;
   creadoEn: string;
 };
@@ -38,13 +40,13 @@ export type CreateUserPayload = {
   email: string;
   password: string;
   nombre: string;
-  rol: 'ADMIN' | 'VENDEDOR';
+  rol: UserRol;
 };
 
 export type UpdateUserPayload = {
   email?: string;
   nombre?: string;
-  rol?: 'ADMIN' | 'VENDEDOR';
+  rol?: UserRol;
   password?: string;
 };
 

@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtService.parseAccessToken(token);
             String jti = claims.getId();
             if (tokenBlocklistService.isBlocked(jti)) {
-                filterChain.doFilter(request, response);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token bloqueado");
                 return;
             }
 

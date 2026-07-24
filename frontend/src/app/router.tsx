@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LandingPage } from '../modules/landing/pages/LandingPage';
+import { RegistrationPage } from '../modules/landing/pages/RegistrationPage';
 import { LoginPage } from '../modules/auth/pages/LoginPage';
 import { ProductListPage } from '../modules/products/pages/ProductListPage';
 import { POSPage } from '../modules/sales/pages/POSPage';
@@ -58,6 +59,7 @@ export function AppRouter() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegistrationPage />} />
       <Route
         path="/products"
         element={

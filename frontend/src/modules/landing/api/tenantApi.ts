@@ -18,7 +18,7 @@ export type RegisterTenantResponse = {
 
 export const tenantApi = {
   register: async (payload: RegisterTenantPayload): Promise<RegisterTenantResponse> => {
-    const { data } = await httpClient.post<RegisterTenantResponse>('/api/v1/tenants/register', payload);
+    const { data } = await httpClient.post<RegisterTenantResponse>('/tenants/register', payload);
     return data;
   },
 };

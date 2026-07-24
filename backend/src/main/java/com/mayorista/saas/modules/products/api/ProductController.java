@@ -50,7 +50,7 @@ public class ProductController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_BODEGUERO')")
     @CacheEvict(value = "products", allEntries = true)
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {
         ProductEntity saved = productService.create(request);
@@ -58,7 +58,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_BODEGUERO')")
     @CacheEvict(value = "products", allEntries = true)
     public ResponseEntity<ProductResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateProductRequest request) {
         ProductEntity saved = productService.update(id, request);
@@ -66,7 +66,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_BODEGUERO')")
     @CacheEvict(value = "products", allEntries = true)
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         productService.delete(id);

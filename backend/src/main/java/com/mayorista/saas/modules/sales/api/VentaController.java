@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +32,7 @@ public class VentaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VENDEDOR')")
     public ResponseEntity<VentaResponse> crear(
             @Valid @RequestBody CreateVentaRequest request,
             Authentication authentication) {
@@ -40,6 +42,7 @@ public class VentaController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VENDEDOR', 'ROLE_CONTADOR')")
     public ResponseEntity<Page<VentaResponse>> list(
             @PageableDefault(size = 20, sort = "fechaVenta", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
@@ -47,11 +50,13 @@ public class VentaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VENDEDOR', 'ROLE_CONTADOR')")
     public ResponseEntity<VentaResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(ventaService.getById(id));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Void> cancel(@PathVariable UUID id) {
         ventaService.cancelar(id);
         return ResponseEntity.noContent().build();

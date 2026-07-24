@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { productsApi, type CreateProductPayload } from '../../../shared/api/productsApi';
-import { httpClient } from '../../../shared/api/httpClient';
 import type { PageResponse, Product, UpdateProductPayload } from '../../../shared/api/types';
+import { httpClient } from '../../../shared/api/httpClient';
 import { Modal } from '../../../shared/ui/Modal';
+import { useAuthStore } from '../../../shared/store/authStore';
 
 type CategoryOption = { id: string; nombre: string };
 
@@ -21,6 +22,7 @@ export function ProductListPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState('');
   const [categoria, setCategoria] = useState('');
+  const canManageProducts = useAuthStore((s) => s.hasRole)('ADMIN', 'BODEGUERO');
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
@@ -48,7 +50,7 @@ export function ProductListPage() {
 
   const loadCategories = async () => {
     try {
-      const { data } = await httpClient.get<{ id: string; nombre: string }[]>('/api/v1/categories');
+      const { data } = await httpClient.get<{ id: string; nombre: string }[]>('/categories');
       setCategories(data);
     } catch {
       // fallback to empty list — form dropdown will show nothing useful
@@ -105,9 +107,11 @@ export function ProductListPage() {
         <h1>
           Inventario <span className="header-count">({page.totalElements} productos)</span>
         </h1>
-        <button className="btn btn-primary" onClick={openCreate}>
-          Nuevo Producto
-        </button>
+        {canManageProducts && (
+          <button className="btn btn-primary" onClick={openCreate}>
+            Nuevo Producto
+          </button>
+        )}
       </div>
 
       <div className="filter-bar">
@@ -164,12 +168,16 @@ export function ProductListPage() {
                   </td>
                   <td>
                     <div className="actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(p)}>
-                        Editar
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(p.id)}>
-                        Eliminar
-                      </button>
+                      {canManageProducts && (
+                        <>
+                          <button className="btn btn-ghost btn-sm" onClick={() => openEdit(p)}>
+                            Editar
+                          </button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(p.id)}>
+                            Eliminar
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

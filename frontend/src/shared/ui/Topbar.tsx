@@ -1,4 +1,11 @@
-import type { MeResponse } from '../api/types';
+import type { MeResponse, UserRol } from '../api/types';
+
+const ROLE_LABELS: Record<UserRol, string> = {
+  ADMIN: 'Administrador',
+  VENDEDOR: 'Vendedor',
+  BODEGUERO: 'Bodeguero',
+  CONTADOR: 'Contador',
+};
 
 type TopbarProps = {
   title: string;
@@ -44,7 +51,7 @@ export function Topbar({ title, breadcrumb, user, onLogout, onToggleSidebar }: T
           <div className="user-details">
             <div className="name">{user?.nombre ?? ''}</div>
             <div className="role">
-              {user?.rol === 'ADMIN' ? 'Administrador' : user?.rol === 'VENDEDOR' ? 'Vendedor' : ''}
+              {user ? ROLE_LABELS[user.rol as UserRol] ?? user.rol : ''}
             </div>
           </div>
           <div className="avatar" style={{ background: 'var(--color-primary)' }}>

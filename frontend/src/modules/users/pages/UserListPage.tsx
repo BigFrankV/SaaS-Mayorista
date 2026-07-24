@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { userApi } from '../api/userApi';
-import type { UserResponse, CreateUserPayload, UpdateUserPayload } from '../../../shared/api/types';
+import type { UserResponse, CreateUserPayload, UpdateUserPayload, UserRol } from '../../../shared/api/types';
 import { Modal } from '../../../shared/ui/Modal';
 
 export function UserListPage() {
@@ -118,7 +118,7 @@ export function UserListPage() {
                   <td>{u.nombre}</td>
                   <td>{u.email}</td>
                   <td>
-                    <span className={`badge ${u.rol === 'ADMIN' ? 'badge-info' : 'badge-secondary'}`}>
+                    <span className={`badge ${u.rol === 'ADMIN' ? 'badge-info' : u.rol === 'CONTADOR' ? 'badge-warning' : 'badge-secondary'}`}>
                       {u.rol}
                     </span>
                   </td>
@@ -190,7 +190,7 @@ function UserForm({
   const [nombre, setNombre] = useState(initial?.nombre ?? '');
   const [email, setEmail] = useState(initial?.email ?? '');
   const [password, setPassword] = useState('');
-  const [rol, setRol] = useState<'ADMIN' | 'VENDEDOR'>(initial?.rol ?? 'VENDEDOR');
+  const [rol, setRol] = useState<'ADMIN' | 'VENDEDOR'>((initial?.rol as 'ADMIN' | 'VENDEDOR') ?? 'VENDEDOR');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -263,6 +263,8 @@ function UserForm({
           onChange={(e) => setRol(e.target.value as 'ADMIN' | 'VENDEDOR')}
         >
           <option value="VENDEDOR">Vendedor</option>
+          <option value="BODEGUERO">Bodeguero</option>
+          <option value="CONTADOR">Contador</option>
           <option value="ADMIN">Administrador</option>
         </select>
       </div>
