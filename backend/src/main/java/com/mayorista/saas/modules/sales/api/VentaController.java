@@ -10,11 +10,15 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/sales")
@@ -40,5 +44,16 @@ public class VentaController {
             @PageableDefault(size = 20, sort = "fechaVenta", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
         return ResponseEntity.ok(ventaService.list(pageable));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<VentaResponse> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(ventaService.getById(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancel(@PathVariable UUID id) {
+        ventaService.cancelar(id);
+        return ResponseEntity.noContent().build();
     }
 }

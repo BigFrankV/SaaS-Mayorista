@@ -9,11 +9,12 @@ export function UserListPage() {
   const [error, setError] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+  const [activo, setActivo] = useState(true);
 
-  const loadUsers = async () => {
+  const loadUsers = async (onlyActivos = activo) => {
     setLoading(true);
     try {
-      const data = await userApi.list();
+      const data = await userApi.list(0, 20, onlyActivos);
       setUsers(data.content);
     } catch {
       setError('Error al cargar usuarios');
@@ -23,7 +24,8 @@ export function UserListPage() {
   };
 
   useEffect(() => {
-    loadUsers();
+    void loadUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreate = async (payload: CreateUserPayload) => {
@@ -43,6 +45,11 @@ export function UserListPage() {
     if (!confirm('¿Eliminar este usuario?')) return;
     await userApi.delete(id);
     await loadUsers();
+  };
+
+  const handleActivoToggle = (value: boolean) => {
+    setActivo(value);
+    void loadUsers(value);
   };
 
   const openCreate = () => {
@@ -79,6 +86,17 @@ export function UserListPage() {
         <button className="btn btn-primary" onClick={openCreate}>
           Nuevo Usuario
         </button>
+      </div>
+
+      <div className="filter-bar" style={{ marginBottom: 'var(--space-4)' }}>
+        <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={activo}
+            onChange={(e) => handleActivoToggle(e.target.checked)}
+          />
+          Mostrar solo activos
+        </label>
       </div>
 
       <div className="card">

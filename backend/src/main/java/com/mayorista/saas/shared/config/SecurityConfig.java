@@ -65,7 +65,7 @@ public class SecurityConfig {
                                 AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
                                 AntPathRequestMatcher.antMatcher("/swagger-ui.html")
                         ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/bootstrap", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/bootstrap", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/tenants/register").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

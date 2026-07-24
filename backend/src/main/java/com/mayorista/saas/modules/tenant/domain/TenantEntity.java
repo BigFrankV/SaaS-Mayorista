@@ -30,6 +30,9 @@ public class TenantEntity {
     @Column(name = "creado_en", nullable = false)
     private Instant creadoEn;
 
+    @Column(name = "demo", nullable = false)
+    private boolean demo = false;
+
     public UUID getId() {
         return id;
     }
@@ -76,5 +79,13 @@ public class TenantEntity {
 
     public void setCreadoEn(Instant creadoEn) {
         this.creadoEn = creadoEn;
+    }
+
+    public boolean isDemo() {
+        return demo;
+    }
+
+    public void setDemo(boolean demo) {
+        this.demo = demo;
     }
 }

@@ -1,28 +1,60 @@
+import { useEffect, useState } from 'react';
+import { dashboardApi } from '../api/dashboardApi';
 import type { DashboardKPI, VentaResumen } from '../../../shared/api/types';
 
 function formatCurrency(n: number): string {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
 }
 
-const MOCK_KPI: DashboardKPI = {
-  totalVentasHoy: 2340500,
-  productosBajoStock: 12,
-  usuariosActivos: 8,
-  ventasDelMes: 156,
-  cambioVsAyer: 12.5,
-  cambioVsMesAnterior: 8.3,
+type DashboardState = {
+  kpi: DashboardKPI | null;
+  recentSales: VentaResumen[];
+  loading: boolean;
+  error: string | null;
 };
 
-const MOCK_VENTAS: VentaResumen[] = [
-  { folio: 'FAC-001', cliente: 'Distribuidora Norte', rut: '76543210-1', total: 458900, tipo: 'FACTURA', fecha: '2026-07-17' },
-  { folio: 'BOL-001', cliente: 'Almacén San Pablo', rut: '12345678-5', total: 15200, tipo: 'BOLETA', fecha: '2026-07-17' },
-  { folio: 'BOL-002', cliente: 'Minimarket Central', rut: '98765432-0', total: 34500, tipo: 'BOLETA', fecha: '2026-07-17' },
-  { folio: 'FAC-002', cliente: 'Comercial del Sur', rut: '11122333-4', total: 782300, tipo: 'FACTURA', fecha: '2026-07-16' },
-  { folio: 'FAC-003', cliente: 'Mayorista Los Andes', rut: '55667788-2', total: 1200500, tipo: 'FACTURA', fecha: '2026-07-16' },
-  { folio: 'BOL-003', cliente: 'Botillería Express', rut: '22233444-1', total: 28700, tipo: 'BOLETA', fecha: '2026-07-16' },
-];
-
 export function DashboardPage() {
+  const [state, setState] = useState<DashboardState>({
+    kpi: null,
+    recentSales: [],
+    loading: true,
+    error: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [kpiData, salesData] = await Promise.all([
+          dashboardApi.getKpis(),
+          dashboardApi.getRecentSales(5),
+        ]);
+        if (!cancelled) {
+          setState({
+            kpi: kpiData,
+            recentSales: salesData.content,
+            loading: false,
+            error: null,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setState((prev) => ({ ...prev, loading: false, error: 'Error al cargar datos del dashboard' }));
+        }
+      }
+    };
+
+    void load();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (state.loading) return <p>Cargando dashboard...</p>;
+  if (state.error) return <p style={{ color: '#b91c1c' }}>{state.error}</p>;
+  if (!state.kpi) return <p>No hay datos disponibles</p>;
+
+  const { kpi, recentSales } = state;
+
   return (
     <div className="dashboard-page">
       {/* KPI Cards */}
@@ -31,8 +63,10 @@ export function DashboardPage() {
           <div className="kpi-row">
             <div>
               <div className="kpi-label">Total Ventas Hoy</div>
-              <div className="kpi-value">{formatCurrency(MOCK_KPI.totalVentasHoy)}</div>
-              <div className="kpi-change up">▲ {MOCK_KPI.cambioVsAyer}% vs ayer</div>
+              <div className="kpi-value">{formatCurrency(kpi.totalVentasHoy)}</div>
+              <div className={`kpi-change ${kpi.cambioVsAyer >= 0 ? 'up' : ''}`}>
+                {kpi.cambioVsAyer >= 0 ? '▲' : '▼'} {Math.abs(kpi.cambioVsAyer)}% vs ayer
+              </div>
             </div>
             <div className="kpi-icon teal">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -46,7 +80,7 @@ export function DashboardPage() {
           <div className="kpi-row">
             <div>
               <div className="kpi-label">Productos Bajos Stock</div>
-              <div className="kpi-value" style={{ color: 'var(--color-warning)' }}>{MOCK_KPI.productosBajoStock}</div>
+              <div className="kpi-value" style={{ color: 'var(--color-warning)' }}>{kpi.productosBajoStock}</div>
               <div className="kpi-change" style={{ color: 'var(--color-warning)' }}>⚠️ Requieren reposición</div>
             </div>
             <div className="kpi-icon orange">
@@ -61,7 +95,7 @@ export function DashboardPage() {
           <div className="kpi-row">
             <div>
               <div className="kpi-label">Usuarios Activos</div>
-              <div className="kpi-value" style={{ color: 'var(--color-info)' }}>{MOCK_KPI.usuariosActivos}</div>
+              <div className="kpi-value" style={{ color: 'var(--color-info)' }}>{kpi.usuariosActivos}</div>
               <div className="kpi-change up">▲ 2 esta semana</div>
             </div>
             <div className="kpi-icon blue">
@@ -76,8 +110,10 @@ export function DashboardPage() {
           <div className="kpi-row">
             <div>
               <div className="kpi-label">Ventas del Mes</div>
-              <div className="kpi-value">{MOCK_KPI.ventasDelMes}</div>
-              <div className="kpi-change up">▲ {MOCK_KPI.cambioVsMesAnterior}% vs mes anterior</div>
+              <div className="kpi-value">{kpi.ventasDelMes}</div>
+              <div className={`kpi-change ${kpi.cambioVsMesAnterior >= 0 ? 'up' : ''}`}>
+                {kpi.cambioVsMesAnterior >= 0 ? '▲' : '▼'} {Math.abs(kpi.cambioVsMesAnterior)}% vs mes anterior
+              </div>
             </div>
             <div className="kpi-icon green">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -107,7 +143,7 @@ export function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_VENTAS.map((venta) => (
+              {recentSales.map((venta) => (
                 <tr key={venta.folio}>
                   <td className="font-medium">{venta.folio}</td>
                   <td>{venta.cliente}</td>

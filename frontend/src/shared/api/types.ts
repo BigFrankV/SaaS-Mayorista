@@ -9,6 +9,8 @@ export type Product = {
   id: string;
   codigoBarras: string;
   nombre: string;
+  categoria?: string;
+  descripcion?: string;
   stockActual: number;
   stockMinimo: number;
   precioNeto: number;
@@ -56,6 +58,8 @@ export type PageResponse<T> = {
 
 export type UpdateProductPayload = {
   nombre?: string;
+  categoria?: string;
+  descripcion?: string;
   stockActual?: number;
   stockMinimo?: number;
   precioNeto?: number;

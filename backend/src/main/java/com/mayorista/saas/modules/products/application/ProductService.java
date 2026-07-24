@@ -35,6 +35,11 @@ public class ProductService {
         return productRepository.findByStockBajo(tenantId, pageable);
     }
 
+    public Page<ProductEntity> listByCategoria(String categoria, Pageable pageable) {
+        UUID tenantId = TenantContext.getTenantId();
+        return productRepository.findAllByTenantIdAndCategoria(tenantId, categoria, pageable);
+    }
+
     public Page<ProductEntity> searchByCodigo(String query, Pageable pageable) {
         UUID tenantId = TenantContext.getTenantId();
         return productRepository.search(tenantId, query, pageable);
@@ -57,6 +62,8 @@ public class ProductService {
         entity.setStockActual(request.stockActual());
         entity.setStockMinimo(request.stockMinimo());
         entity.setPrecioNeto(request.precioNeto());
+        entity.setCategoria(request.categoria());
+        entity.setDescripcion(request.descripcion());
         Instant now = Instant.now();
         entity.setCreadoEn(now);
         entity.setActualizadoEn(now);
@@ -71,6 +78,8 @@ public class ProductService {
         entity.setStockActual(request.stockActual());
         entity.setStockMinimo(request.stockMinimo());
         entity.setPrecioNeto(request.precioNeto());
+        entity.setCategoria(request.categoria());
+        entity.setDescripcion(request.descripcion());
         entity.setActualizadoEn(Instant.now());
         return productRepository.save(entity);
     }

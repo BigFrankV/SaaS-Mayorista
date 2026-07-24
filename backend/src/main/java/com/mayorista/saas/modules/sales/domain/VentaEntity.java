@@ -46,6 +46,9 @@ public class VentaEntity {
     @Column(name = "fecha_venta", nullable = false)
     private Instant fechaVenta;
 
+    @Column(name = "anulada", nullable = false)
+    private boolean anulada = false;
+
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleVentaEntity> detalles = new ArrayList<>();
 
@@ -127,6 +130,14 @@ public class VentaEntity {
 
     public void setFechaVenta(Instant fechaVenta) {
         this.fechaVenta = fechaVenta;
+    }
+
+    public boolean isAnulada() {
+        return anulada;
+    }
+
+    public void setAnulada(boolean anulada) {
+        this.anulada = anulada;
     }
 
     public List<DetalleVentaEntity> getDetalles() {

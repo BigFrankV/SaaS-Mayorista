@@ -18,8 +18,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -101,20 +103,49 @@ public class VentaService {
         UUID tenantId = requireTenant();
         Page<VentaEntity> page = ventaRepository.findAllByTenantId(tenantId, pageable);
 
-        // Cargar nombres de productos para toda la página
+        // Batch-load product names for the entire page
         List<VentaEntity> ventas = page.getContent();
         Map<UUID, ProductEntity> allProducts = new HashMap<>();
+        Set<UUID> productIds = new HashSet<>();
         for (VentaEntity v : ventas) {
             for (DetalleVentaEntity d : v.getDetalles()) {
-                if (!allProducts.containsKey(d.getProductoId())) {
-                    productRepository.findByIdAndTenantId(d.getProductoId(), tenantId)
-                            .ifPresent(p -> allProducts.put(d.getProductoId(), p));
-                }
+                productIds.add(d.getProductoId());
+            }
+        }
+        if (!productIds.isEmpty()) {
+            List<ProductEntity> products = productRepository.findAllById(productIds);
+            for (ProductEntity p : products) {
+                allProducts.put(p.getId(), p);
             }
         }
 
         Map<UUID, ProductEntity> finalMap = allProducts;
         return page.map(v -> VentaMapper.toResponseWithProductNames(v, finalMap));
+    }
+
+    public VentaResponse getById(UUID id) {
+        UUID tenantId = requireTenant();
+        VentaEntity venta = ventaRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Venta no encontrada: " + id));
+        return VentaMapper.toResponse(venta);
+    }
+
+    @Transactional
+    public void cancelar(UUID id) {
+        UUID tenantId = requireTenant();
+        VentaEntity venta = ventaRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Venta no encontrada: " + id));
+        if (venta.isAnulada()) {
+            throw new IllegalStateException("La venta ya está anulada");
+        }
+        // Restore stock for each detail
+        for (DetalleVentaEntity detalle : venta.getDetalles()) {
+            ProductEntity producto = productRepository.findByIdAndTenantIdWithLock(detalle.getProductoId(), tenantId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Producto no encontrado: " + detalle.getProductoId()));
+            producto.setStockActual(producto.getStockActual() + detalle.getCantidad());
+        }
+        venta.setAnulada(true);
     }
 
     private UUID requireTenant() {

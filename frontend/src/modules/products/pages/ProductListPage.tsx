@@ -1,15 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { productsApi, type CreateProductPayload } from '../../../shared/api/productsApi';
+import { httpClient } from '../../../shared/api/httpClient';
 import type { PageResponse, Product, UpdateProductPayload } from '../../../shared/api/types';
 import { Modal } from '../../../shared/ui/Modal';
 
-const CATEGORIAS = [
-  { id: 'abarrotes', nombre: 'Abarrotes' },
-  { id: 'lacteos', nombre: 'Lácteos' },
-  { id: 'bebidas', nombre: 'Bebidas' },
-  { id: 'limpieza', nombre: 'Limpieza' },
-  { id: 'congelados', nombre: 'Congelados' },
-];
+type CategoryOption = { id: string; nombre: string };
 
 export function ProductListPage() {
   const [page, setPage] = useState<PageResponse<Product>>({
@@ -26,6 +21,8 @@ export function ProductListPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   const load = useCallback(
     async (p = currentPage) => {
@@ -45,8 +42,21 @@ export function ProductListPage() {
 
   useEffect(() => {
     void load(0);
+    void loadCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const { data } = await httpClient.get<{ id: string; nombre: string }[]>('/api/v1/categories');
+      setCategories(data);
+    } catch {
+      // fallback to empty list — form dropdown will show nothing useful
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const handleCreate = async (payload: CreateProductPayload) => {
     await productsApi.create(payload);
@@ -107,9 +117,12 @@ export function ProductListPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <select className="select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+        <select className="select" value={categoria} onChange={(e) => setCategoria(e.target.value)} disabled={categoriesLoading}>
           <option value="">Todas las categorías</option>
-          {CATEGORIAS.map((cat) => (
+          {categories.length === 0 && !categoriesLoading && (
+            <option value="" disabled>Sin categorías</option>
+          )}
+          {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.nombre}
             </option>
@@ -204,6 +217,8 @@ export function ProductListPage() {
         <ProductForm
           mode={modalMode ?? 'create'}
           initial={editingProduct ?? undefined}
+          categories={categories}
+          categoriesLoading={categoriesLoading}
           onSubmit={async (data) => {
             if (modalMode === 'create') {
               await handleCreate(data as CreateProductPayload);
@@ -220,29 +235,34 @@ export function ProductListPage() {
 function ProductForm({
   mode,
   initial,
+  categories,
+  categoriesLoading,
   onSubmit,
 }: {
   mode: 'create' | 'edit';
   initial?: Product;
+  categories: CategoryOption[];
+  categoriesLoading: boolean;
   onSubmit: (data: any) => Promise<void>;
 }) {
   const [codigoBarras, setCodigoBarras] = useState(initial?.codigoBarras ?? '');
   const [nombre, setNombre] = useState(initial?.nombre ?? '');
-  const [categoria, setCategoria] = useState('');
+  const [categoria, setCategoria] = useState(initial?.categoria ?? '');
   const [stockActual, setStockActual] = useState(initial?.stockActual ?? 0);
   const [stockMinimo, setStockMinimo] = useState(initial?.stockMinimo ?? 10);
   const [precioNeto, setPrecioNeto] = useState(initial?.precioNeto ?? 1000);
-  const [descripcion, setDescripcion] = useState('');
+  const [descripcion, setDescripcion] = useState(initial?.descripcion ?? '');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      const base = { nombre, stockActual, stockMinimo, precioNeto, categoria, descripcion };
       const payload =
         mode === 'create'
-          ? { codigoBarras, nombre, stockActual, stockMinimo, precioNeto }
-          : { nombre, stockActual, stockMinimo, precioNeto };
+          ? { codigoBarras, ...base }
+          : base;
       await onSubmit(payload);
     } finally {
       setSubmitting(false);
@@ -284,9 +304,13 @@ function ProductForm({
           className="select"
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}
+          disabled={categoriesLoading}
         >
           <option value="">Seleccionar categoría</option>
-          {CATEGORIAS.map((cat) => (
+          {categories.length === 0 && !categoriesLoading && (
+            <option value="" disabled>Sin categorías</option>
+          )}
+          {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.nombre}
             </option>

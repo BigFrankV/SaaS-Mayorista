@@ -4,6 +4,8 @@ import type { PageResponse, Product, UpdateProductPayload } from './types';
 export type CreateProductPayload = {
   codigoBarras: string;
   nombre: string;
+  categoria?: string;
+  descripcion?: string;
   stockActual: number;
   stockMinimo: number;
   precioNeto: number;

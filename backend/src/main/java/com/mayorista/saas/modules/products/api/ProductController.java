@@ -28,12 +28,15 @@ public class ProductController {
     public ResponseEntity<Page<ProductResponse>> list(
             @PageableDefault(size = 20, sort = "nombre") Pageable pageable,
             @RequestParam(required = false) Boolean stockBajo,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String categoria) {
         Page<ProductResponse> data;
         if (stockBajo != null && stockBajo) {
             data = productService.listByStockBajo(pageable).map(ProductResponse::from);
         } else if (search != null && !search.isBlank()) {
             data = productService.searchByCodigo(search, pageable).map(ProductResponse::from);
+        } else if (categoria != null && !categoria.isBlank()) {
+            data = productService.listByCategoria(categoria, pageable).map(ProductResponse::from);
         } else {
             data = productService.list(pageable).map(ProductResponse::from);
         }

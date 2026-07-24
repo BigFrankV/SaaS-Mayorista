@@ -30,8 +30,12 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Page<UserResponse> list(Pageable pageable) {
+    public Page<UserResponse> list(Pageable pageable, boolean activo) {
         UUID tenantId = requireTenant();
+        if (activo) {
+            return userRepository.findAllByTenantIdAndActivoTrue(tenantId, pageable)
+                    .map(UserResponse::from);
+        }
         return userRepository.findAllByTenantId(tenantId, pageable)
                 .map(UserResponse::from);
     }

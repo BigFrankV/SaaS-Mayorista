@@ -11,5 +11,12 @@ export const salesApi = {
       params: { page, size }
     });
     return data;
+  },
+  getById: async (id: string): Promise<SaleResponse> => {
+    const { data } = await httpClient.get<SaleResponse>(`/sales/${id}`);
+    return data;
+  },
+  deleteSale: async (id: string): Promise<void> => {
+    await httpClient.delete(`/sales/${id}`);
   }
 };
