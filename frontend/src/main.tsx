@@ -3,12 +3,17 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AppRouter } from './app/router';
 import { ErrorBoundary } from './shared/ui/ErrorBoundary';
+import { useAuthStore } from './shared/store/authStore';
 import './css/01-tokens.css';
 import './css/02-base.css';
 import './css/03-atomos.css';
 import './css/04-moleculas.css';
 import './css/05-organismos.css';
 import './css/06-paginas.css';
+
+// Attempt to restore the session from the httpOnly refresh cookie before the
+// first render; ProtectedRoute shows a loading state until status resolves.
+void useAuthStore.getState().hydrate();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

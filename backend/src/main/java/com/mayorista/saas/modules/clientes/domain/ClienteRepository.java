@@ -18,5 +18,7 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, UUID> {
 
     boolean existsByTenantIdAndRut(UUID tenantId, String rut);
 
+    boolean existsByTenantIdAndRutAndIdNot(UUID tenantId, String rut, UUID id);
+
     Page<ClienteEntity> findAllByTenantId(UUID tenantId, Pageable pageable);
 }

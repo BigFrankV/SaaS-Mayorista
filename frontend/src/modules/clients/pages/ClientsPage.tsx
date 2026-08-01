@@ -38,7 +38,6 @@ export function ClientsPage() {
 
   useEffect(() => {
     void loadClients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreate = async (payload: CreateClientPayload) => {

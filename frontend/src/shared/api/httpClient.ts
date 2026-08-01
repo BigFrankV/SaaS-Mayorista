@@ -2,10 +2,13 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import type { TokenResponse } from './types';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL;
+export const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 export const httpClient = axios.create({
   baseURL,
+  // Required so the httpOnly refresh cookie travels with every request
+  // (used by /auth/refresh and /auth/logout).
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -41,6 +44,13 @@ function parseErrorBody(error: unknown): { message: string; status?: number } {
   return { message: axiosError?.message ?? 'Unknown error' };
 }
 
+function redirectToLogin() {
+  if (typeof window === 'undefined' || window.location.pathname === '/login') {
+    return;
+  }
+  window.location.assign('/login');
+}
+
 httpClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -53,9 +63,10 @@ httpClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refreshToken = useAuthStore.getState().refreshToken;
-    if (!refreshToken) {
+    const accessToken = useAuthStore.getState().accessToken;
+    if (!accessToken) {
       useAuthStore.getState().clear();
+      redirectToLogin();
       return Promise.reject(error);
     }
 
@@ -76,16 +87,20 @@ httpClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const response = await axios.post<TokenResponse>(`${baseURL}/auth/refresh`, { refreshToken });
-      useAuthStore.getState().setTokens(response.data.accessToken, response.data.refreshToken);
-      queue.forEach((cb) => cb(response.data.accessToken));
+      // Raw axios on purpose: the refresh endpoint authenticates via the httpOnly
+      // cookie, and using httpClient here would recurse into this interceptor.
+      const response = await axios.post<TokenResponse>(`${baseURL}/auth/refresh`, {}, { withCredentials: true });
+      const newAccessToken = response.data.accessToken;
+      useAuthStore.getState().setTokens(newAccessToken);
+      queue.forEach((cb) => cb(newAccessToken));
       queue = [];
-      originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
+      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return httpClient(originalRequest);
     } catch (refreshError) {
       useAuthStore.getState().clear();
       queue.forEach((cb) => cb(null));
       queue = [];
+      redirectToLogin();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

@@ -11,7 +11,9 @@ import com.mayorista.saas.modules.sales.domain.VentaEntity;
 import com.mayorista.saas.modules.sales.domain.VentaRepository;
 import com.mayorista.saas.modules.users.domain.UserEntity;
 import com.mayorista.saas.modules.users.domain.UserRepository;
+import com.mayorista.saas.shared.config.DashboardTimeZone;
 import com.mayorista.saas.shared.tenant.TenantContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -39,6 +41,9 @@ public class VentaService {
     private final ProductRepository productRepository;
     private final ClienteRepository clienteRepository;
     private final UserRepository userRepository;
+
+    @Value("${app.dashboard.time-zone:systemDefault}")
+    private String dashboardTimeZone;
 
     public VentaService(VentaRepository ventaRepository, ProductRepository productRepository,
                         ClienteRepository clienteRepository, UserRepository userRepository) {
@@ -132,9 +137,11 @@ public class VentaService {
     public Page<VentaResponse> list(UUID tenantId, Pageable pageable,
                                      LocalDate fechaDesde, LocalDate fechaHasta,
                                      String search, String tipoDocumento, Boolean anulada) {
-        // Convert LocalDate to Instant for query comparison
-        Instant desde = fechaDesde != null ? fechaDesde.atStartOfDay(ZoneId.systemDefault()).toInstant() : null;
-        Instant hasta = fechaHasta != null ? fechaHasta.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant() : null;
+        // Convert LocalDate to Instant for query comparison. The zone is shared
+        // with DashboardService so KPI windows and list filters always match.
+        ZoneId zone = DashboardTimeZone.resolve(dashboardTimeZone);
+        Instant desde = fechaDesde != null ? fechaDesde.atStartOfDay(zone).toInstant() : null;
+        Instant hasta = fechaHasta != null ? fechaHasta.plusDays(1).atStartOfDay(zone).toInstant() : null;
 
         Page<VentaEntity> page = ventaRepository.findAllByTenantIdWithFilters(tenantId, desde, hasta, cleanSearch(search), tipoDocumento, anulada, pageable);
 

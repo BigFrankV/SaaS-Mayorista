@@ -1,9 +1,10 @@
 import { Navigate } from 'react-router-dom';
+import type { ReactElement } from 'react';
 import { useAuthStore } from '../../../shared/store/authStore';
 
 type RoleRouteProps = {
   roles: string[];
-  children: JSX.Element;
+  children: ReactElement;
 };
 
 export function RoleRoute({ roles, children }: RoleRouteProps) {

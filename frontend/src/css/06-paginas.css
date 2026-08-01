@@ -991,3 +991,14 @@
     max-width: 280px;
   }
 }
+
+/* Full-screen session loading state (shown by ProtectedRoute while hydrating) */
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+

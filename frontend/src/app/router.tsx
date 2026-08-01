@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { LandingPage } from '../modules/landing/pages/LandingPage';
 import { RegistrationPage } from '../modules/landing/pages/RegistrationPage';
 import { LoginPage } from '../modules/auth/pages/LoginPage';
@@ -34,25 +35,30 @@ function deriveRouteMeta(pathname: string) {
   return { title: 'SaaS Mayorista', breadcrumb: [] };
 }
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: ReactElement }) {
+  const status = useAuthStore((s) => s.status);
   const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const clear = useAuthStore((s) => s.clear);
 
   useEffect(() => {
-    if (accessToken && !user) {
+    if (status === 'authenticated' && accessToken && !user) {
       authApi.me().then(setUser).catch(() => clear());
     }
-  }, [accessToken, user]);
+  }, [status, accessToken, user, setUser, clear]);
 
-  if (!accessToken) {
+  if (status === 'loading') {
+    return <div className="page-loading">Cargando sesión…</div>;
+  }
+
+  if (!accessToken || status !== 'authenticated') {
     return <Navigate to="/login" replace />;
   }
   return children;
 }
 
-function PageWithLayout({ children, path }: { children: JSX.Element; path: string }) {
+function PageWithLayout({ children, path }: { children: ReactElement; path: string }) {
   const { title, breadcrumb } = deriveRouteMeta(path);
   return (
     <AppLayout title={title} breadcrumb={breadcrumb}>

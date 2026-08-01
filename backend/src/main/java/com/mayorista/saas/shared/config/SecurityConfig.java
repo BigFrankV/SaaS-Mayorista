@@ -1,5 +1,6 @@
 package com.mayorista.saas.shared.config;
 
+import com.mayorista.saas.shared.security.CookieOriginFilter;
 import com.mayorista.saas.shared.security.CustomUserDetailsService;
 import com.mayorista.saas.shared.security.JwtAuthenticationFilter;
 import com.mayorista.saas.shared.security.AuthRateLimitFilter;
@@ -18,7 +19,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -35,20 +36,32 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final TenantFilter tenantFilter;
     private final CustomUserDetailsService userDetailsService;
+    private final CookieOriginFilter cookieOriginFilter;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
+
+    /**
+     * True only in the dev profile (see application-dev.yml). When false, the
+     * Swagger/OpenAPI paths fall under anyRequest().authenticated(), so the API
+     * contract is never public in prod — where springdoc is also disabled
+     * entirely (application-prod.yml), making the routes return 404.
+     */
+    @Value("${app.security.swagger-enabled:false}")
+    private boolean swaggerEnabled;
 
     public SecurityConfig(
             AuthRateLimitFilter authRateLimitFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             TenantFilter tenantFilter,
-            CustomUserDetailsService userDetailsService
+            CustomUserDetailsService userDetailsService,
+            CookieOriginFilter cookieOriginFilter
     ) {
         this.authRateLimitFilter = authRateLimitFilter;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.tenantFilter = tenantFilter;
         this.userDetailsService = userDetailsService;
+        this.cookieOriginFilter = cookieOriginFilter;
     }
 
     @Bean
@@ -58,15 +71,19 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(daoAuthenticationProvider())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers(
-                                AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                                AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
-                                AntPathRequestMatcher.antMatcher("/swagger-ui.html")
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/bootstrap", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/tenants/register").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers("/actuator/health", "/actuator/info").permitAll();
+                    if (swaggerEnabled) {
+                        auth.requestMatchers(
+                                PathPatternRequestMatcher.pathPattern("/swagger-ui/**"),
+                                PathPatternRequestMatcher.pathPattern("/v3/api-docs/**"),
+                                PathPatternRequestMatcher.pathPattern("/swagger-ui.html")
+                        ).permitAll();
+                    }
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/bootstrap", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/tenants/register").permitAll();
+                    auth.anyRequest().authenticated();
+                })
+                .addFilterBefore(cookieOriginFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(tenantFilter, UsernamePasswordAuthenticationFilter.class);
@@ -76,8 +93,7 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }

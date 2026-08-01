@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -44,6 +45,9 @@ public class AuthService {
 
     @Value("${app.bootstrap.enabled:true}")
     private boolean bootstrapEnabled;
+
+    @Value("${app.security.jwt.access-ttl-seconds:900}")
+    private long accessTtlSeconds;
 
     public AuthService(
             AuthenticationManager authenticationManager,
@@ -121,6 +125,12 @@ public class AuthService {
         UserEntity user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
 
+        // Only active users reach this point (the authentication provider rejects
+        // disabled accounts). Clearing the user blocklist lets a reactivated user
+        // log in immediately, even if a stale block key from their deactivation is
+        // still present in Redis.
+        tokenBlocklistService.clearUserBlocklist(user.getId());
+
         return issueTokenPair(user);
     }
 
@@ -139,12 +149,34 @@ public class AuthService {
         UserEntity user = userRepository.findById(existing.getUsuarioId())
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"));
 
+        if (!user.isActivo()) {
+            // A disabled user must not renew its session. Kill every session the
+            // user still holds (refresh tokens in DB + jti blocklist) and block the
+            // user as a whole so in-flight access tokens die on the next request.
+            revokeAllUserSessions(user.getId());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario desactivado");
+        }
+
         existing.setRevocado(true);
         existing.setRevocadoEn(Instant.now());
         refreshTokenRepository.save(existing);
         tokenBlocklistService.blockJti(jti, Duration.between(Instant.now(), existing.getExpiraEn()).abs());
 
         return issueTokenPair(user);
+    }
+
+    private void revokeAllUserSessions(UUID userId) {
+        List<RefreshTokenEntity> userTokens = refreshTokenRepository.findAllByUsuarioId(userId);
+        Instant now = Instant.now();
+        for (RefreshTokenEntity token : userTokens) {
+            if (!token.isRevocado()) {
+                token.setRevocado(true);
+                token.setRevocadoEn(now);
+                refreshTokenRepository.save(token);
+            }
+            tokenBlocklistService.blockJti(token.getJti(), Duration.between(now, token.getExpiraEn()).abs());
+        }
+        tokenBlocklistService.blockUser(userId, Duration.ofSeconds(accessTtlSeconds));
     }
 
     @Transactional
@@ -154,18 +186,21 @@ public class AuthService {
 
     @Transactional
     public void logout(String refreshToken, String accessJti) {
-        Claims claims = jwtService.parseRefreshToken(refreshToken);
-        String jti = claims.getId();
+        // The refresh token now arrives via cookie (may be absent if it already expired)
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            Claims claims = jwtService.parseRefreshToken(refreshToken);
+            String jti = claims.getId();
 
-        refreshTokenRepository.findByJti(jti).ifPresent(token -> {
-            if (!token.isRevocado()) {
-                token.setRevocado(true);
-                token.setRevocadoEn(Instant.now());
-                refreshTokenRepository.save(token);
-            }
-            Duration ttl = Duration.between(Instant.now(), token.getExpiraEn()).abs();
-            tokenBlocklistService.blockJti(jti, ttl);
-        });
+            refreshTokenRepository.findByJti(jti).ifPresent(token -> {
+                if (!token.isRevocado()) {
+                    token.setRevocado(true);
+                    token.setRevocadoEn(Instant.now());
+                    refreshTokenRepository.save(token);
+                }
+                Duration ttl = Duration.between(Instant.now(), token.getExpiraEn()).abs();
+                tokenBlocklistService.blockJti(jti, ttl);
+            });
+        }
 
         if (accessJti != null && !accessJti.isBlank()) {
             tokenBlocklistService.blockJti(accessJti, Duration.ofMinutes(15));

@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -24,9 +25,13 @@ public class DevBootstrapSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DevBootstrapSeeder.class);
 
+    private static final String RANDOM_PASSWORD_CHARS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${app.bootstrap.enabled:true}")
     private boolean enabled;
@@ -49,7 +54,7 @@ public class DevBootstrapSeeder implements ApplicationRunner {
     @Value("${app.bootstrap.admin-email:admin@mayorista.local}")
     private String adminEmail;
 
-    @Value("${app.bootstrap.admin-password:Admin123!}")
+    @Value("${app.bootstrap.admin-password:}")
     private String adminPassword;
 
     public DevBootstrapSeeder(TenantRepository tenantRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -61,7 +66,20 @@ public class DevBootstrapSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (!enabled || tenantRepository.count() > 0 || userRepository.findByEmailIgnoreCase(adminEmail).isPresent()) {
+        if (!enabled) {
+            return;
+        }
+
+        // S10: no known default password anymore. In dev, generate a random one
+        // and log it exactly once (startup). Non-dev profiles fail fast instead
+        // (BootstrapAdminPasswordGuard).
+        if (adminPassword == null || adminPassword.isBlank()) {
+            adminPassword = generateRandomPassword(24);
+            log.warn("app.bootstrap.admin-password is empty. Generated a random bootstrap admin password "
+                    + "(logged once at startup): {}", adminPassword);
+        }
+
+        if (tenantRepository.count() > 0 || userRepository.findByEmailIgnoreCase(adminEmail).isPresent()) {
             if (tenantRepository.count() > 0) {
                 log.info("Tenants already exist, skipping bootstrap seeder.");
             }
@@ -87,5 +105,13 @@ public class DevBootstrapSeeder implements ApplicationRunner {
         admin.setActivo(true);
         admin.setCreadoEn(Instant.now());
         userRepository.save(admin);
+    }
+
+    private String generateRandomPassword(int length) {
+        StringBuilder password = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            password.append(RANDOM_PASSWORD_CHARS.charAt(secureRandom.nextInt(RANDOM_PASSWORD_CHARS.length())));
+        }
+        return password.toString();
     }
 }

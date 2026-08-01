@@ -1,6 +1,9 @@
 export type TokenResponse = {
   accessToken: string;
-  refreshToken: string;
+  // The backend never returns the refresh token in the body anymore: it is
+  // delivered exclusively via the httpOnly cookie. This field is kept for
+  // response-shape compatibility and is always null.
+  refreshToken: string | null;
   tokenType: string;
   accessTokenExpiresIn: number;
 };

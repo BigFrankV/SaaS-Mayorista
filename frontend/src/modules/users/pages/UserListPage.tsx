@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { userApi } from '../api/userApi';
-import type { UserResponse, CreateUserPayload, UpdateUserPayload, UserRol } from '../../../shared/api/types';
+import type { UserResponse, CreateUserPayload, UpdateUserPayload } from '../../../shared/api/types';
 import { Modal } from '../../../shared/ui/Modal';
 
 export function UserListPage() {

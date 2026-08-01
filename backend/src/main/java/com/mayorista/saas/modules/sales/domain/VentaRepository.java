@@ -36,13 +36,15 @@ public interface VentaRepository extends JpaRepository<VentaEntity, UUID> {
             @Param("anulada") Boolean anulada,
             Pageable pageable);
 
-    @Query("SELECT COALESCE(SUM(v.total), 0) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.fechaVenta >= :since")
+    // Cancelled sales are excluded from money/count metrics: cancellation restores
+    // stock, so from a business standpoint the sale never happened.
+    @Query("SELECT COALESCE(SUM(v.total), 0) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.anulada = false AND v.fechaVenta >= :since")
     Long sumTotalSince(@Param("tenantId") UUID tenantId, @Param("since") Instant since);
 
-    @Query("SELECT COALESCE(SUM(v.total), 0) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.fechaVenta >= :from AND v.fechaVenta < :to")
+    @Query("SELECT COALESCE(SUM(v.total), 0) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.anulada = false AND v.fechaVenta >= :from AND v.fechaVenta < :to")
     Long sumTotalBetween(@Param("tenantId") UUID tenantId, @Param("from") Instant from, @Param("to") Instant to);
 
-    @Query("SELECT COUNT(v) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.fechaVenta >= :since")
+    @Query("SELECT COUNT(v) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.anulada = false AND v.fechaVenta >= :since")
     long countSince(@Param("tenantId") UUID tenantId, @Param("since") Instant since);
 
     @Query("SELECT v FROM VentaEntity v WHERE v.tenantId = :tenantId ORDER BY v.fechaVenta DESC")

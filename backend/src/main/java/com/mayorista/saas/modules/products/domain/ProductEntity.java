@@ -1,8 +1,13 @@
 package com.mayorista.saas.modules.products.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.mayorista.saas.modules.categories.domain.CategoryEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.io.Serializable;
@@ -44,6 +49,14 @@ public class ProductEntity implements Serializable {
 
     @Column(name = "categoria")
     private String categoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    // The category is never serialized: the entity itself is stored in the
+    // Redis cache (GenericJacksonJsonRedisSerializer) and an uninitialized
+    // Hibernate proxy cannot be serialized. API responses use ProductResponse.
+    @JsonIgnore
+    private CategoryEntity category;
 
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
@@ -130,6 +143,14 @@ public class ProductEntity implements Serializable {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public CategoryEntity getCategory() {
+        return category;
+    }
+
+    public void setCategory(CategoryEntity category) {
+        this.category = category;
     }
 
     public void setDescripcion(String descripcion) {

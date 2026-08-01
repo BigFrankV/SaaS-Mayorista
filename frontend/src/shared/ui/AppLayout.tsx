@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { authApi } from '../api/authApi';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import type { MeResponse } from '../api/types';
@@ -14,19 +13,13 @@ type AppLayoutProps = {
 export function AppLayout({ children, title, breadcrumb = [] }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  const refreshToken = useAuthStore((s) => s.refreshToken);
-  const clear = useAuthStore((s) => s.clear);
+  const logout = useAuthStore((s) => s.logout);
 
   const handleLogout = useCallback(() => {
-    if (refreshToken) {
-      fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      }).catch(() => {});
-    }
-    clear();
-  }, [refreshToken, clear]);
+    // Revokes the refresh token on the backend (httpOnly cookie) and clears
+    // the in-memory session. The router redirects to /login via the store status.
+    void logout();
+  }, [logout]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);

@@ -63,6 +63,12 @@ public class ClienteService {
         ClienteEntity entity = clienteRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente no encontrado: " + id));
 
+        if (request.rut() != null) {
+            if (clienteRepository.existsByTenantIdAndRutAndIdNot(tenantId, request.rut(), id)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un cliente con ese RUT en este tenant");
+            }
+            entity.setRut(request.rut());
+        }
         if (request.nombre() != null) entity.setNombre(request.nombre());
         if (request.giro() != null) entity.setGiro(request.giro());
         if (request.direccion() != null) entity.setDireccion(request.direccion());

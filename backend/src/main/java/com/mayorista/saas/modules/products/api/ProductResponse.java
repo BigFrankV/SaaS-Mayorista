@@ -13,6 +13,7 @@ public record ProductResponse(
         int precioNeto,
         boolean stockBajo,
         String categoria,
+        UUID categoriaId,
         String descripcion
 ) {
     public static ProductResponse from(ProductEntity entity) {
@@ -25,6 +26,7 @@ public record ProductResponse(
                 entity.getPrecioNeto(),
                 entity.getStockActual() <= entity.getStockMinimo(),
                 entity.getCategoria(),
+                entity.getCategory() != null ? entity.getCategory().getId() : null,
                 entity.getDescripcion()
         );
     }

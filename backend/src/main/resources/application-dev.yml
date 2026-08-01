@@ -3,3 +3,8 @@ logging:
     root: INFO
     org.springframework.security: INFO
     org.hibernate.SQL: INFO
+
+app:
+  security:
+    # Swagger/OpenAPI is public only in dev (see SecurityConfig).
+    swagger-enabled: true

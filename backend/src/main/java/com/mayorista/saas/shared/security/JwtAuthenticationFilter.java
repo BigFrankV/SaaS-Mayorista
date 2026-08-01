@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -17,6 +19,8 @@ import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final TokenBlocklistService tokenBlocklistService;
@@ -45,12 +49,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // Store access token info for downstream use (e.g. logout blocklist)
+            UUID userId = UUID.fromString(claims.getSubject());
+
+            // Reject users whose sessions were revoked on deactivation (key set by
+            // AuthService/UserService). This is one Redis lookup — the same cost
+            // class as the jti check above — with no database hit per request.
+            if (tokenBlocklistService.isUserBlocked(userId)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Usuario desactivado");
+                return;
+            }
+
+            UUID tenantId = UUID.fromString(String.valueOf(claims.get("tenant_id")));
+
+            // Store access token info for downstream use (e.g. logout blocklist,
+            // access logging)
             request.setAttribute("access_jti", jti);
             request.setAttribute("access_token", token);
+            request.setAttribute("access_user_id", userId.toString());
+            request.setAttribute("access_tenant_id", tenantId.toString());
 
-            UUID userId = UUID.fromString(claims.getSubject());
-            UUID tenantId = UUID.fromString(String.valueOf(claims.get("tenant_id")));
             String role = String.valueOf(claims.get("rol"));
 
             JwtRequestPrincipal principal = new JwtRequestPrincipal(userId, tenantId, role);
@@ -60,7 +77,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalido: " + e.getMessage());
+            // Generic 401 message: never leak internal details (JWT parser internals,
+            // Redis errors, UUID parsing) to the client. Full details go to the log.
+            log.warn("Rejected request with invalid access token: {}", e.getMessage(), e);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
             return;
         }
 

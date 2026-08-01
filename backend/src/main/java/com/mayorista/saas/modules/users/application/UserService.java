@@ -7,7 +7,9 @@ import com.mayorista.saas.modules.users.domain.UserEntity;
 import com.mayorista.saas.modules.users.domain.UserRepository;
 import com.mayorista.saas.modules.users.domain.UserRole;
 import com.mayorista.saas.shared.security.SecurityUtils;
+import com.mayorista.saas.shared.security.TokenBlocklistService;
 import com.mayorista.saas.shared.tenant.TenantContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -16,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -25,10 +29,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TokenBlocklistService tokenBlocklistService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    @Value("${app.security.jwt.access-ttl-seconds:900}")
+    private long accessTtlSeconds;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       TokenBlocklistService tokenBlocklistService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.tokenBlocklistService = tokenBlocklistService;
     }
 
     public Page<UserResponse> list(Pageable pageable, boolean activo) {
@@ -49,7 +59,10 @@ public class UserService {
                     "Only a SUPER_ADMIN can assign the SUPER_ADMIN role");
         }
 
-        if (userRepository.findByEmailIgnoreCase(request.email()).isPresent()) {
+        // Duplicate check is scoped to the tenant: an admin of one tenant must
+        // not learn (or be blocked by) emails used in other tenants. The global
+        // UNIQUE constraint stays for login, this is application-level only.
+        if (userRepository.findByEmailIgnoreCaseAndTenantId(request.email(), tenantId).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya existe");
         }
 
@@ -88,6 +101,11 @@ public class UserService {
         }
 
         if (request.email() != null) {
+            Optional<UserEntity> existing = userRepository
+                    .findByEmailIgnoreCaseAndTenantId(request.email(), tenantId);
+            if (existing.isPresent() && !existing.get().getId().equals(id)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya existe");
+            }
             user.setEmail(request.email().toLowerCase());
         }
         if (request.nombre() != null) {
@@ -134,6 +152,12 @@ public class UserService {
 
         user.setActivo(false);
         userRepository.save(user);
+
+        // Deactivation must kill sessions right away: block the user as a whole so
+        // the JwtAuthenticationFilter rejects in-flight access tokens. Refresh
+        // tokens are revoked lazily by AuthService.refresh() on the first attempt
+        // (it re-checks activo and revokes every token of the user).
+        tokenBlocklistService.blockUser(user.getId(), Duration.ofSeconds(accessTtlSeconds));
     }
 
     private UUID requireTenant() {

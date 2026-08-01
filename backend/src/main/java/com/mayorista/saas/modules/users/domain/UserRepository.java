@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByEmailIgnoreCase(String email);
+    Optional<UserEntity> findByEmailIgnoreCaseAndTenantId(String email, UUID tenantId);
     Page<UserEntity> findAllByTenantIdAndActivoTrue(UUID tenantId, Pageable pageable);
     Page<UserEntity> findAllByTenantId(UUID tenantId, Pageable pageable);
     long countByTenantIdAndRolAndActivoTrue(UUID tenantId, UserRole rol);

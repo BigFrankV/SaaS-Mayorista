@@ -189,4 +189,29 @@ class AuthServiceTest extends AbstractIntegrationTest {
         TokenResponse userBRefresh = authService.refresh(userBLogin.refreshToken());
         assertNotNull(userBRefresh.accessToken());
     }
+
+    @Test
+    void refresh_withDisabledUser_isRejectedAndRevokesAllSessions() {
+        authService.bootstrap(new BootstrapRequest(
+                "Test Empresa", "12121212-2", "Comercio", null,
+                "Admin", "disabled@test.com", "Pass1234!"
+        ));
+
+        // Two active sessions for the same user
+        TokenResponse firstLogin = authService.login(new LoginRequest("disabled@test.com", "Pass1234!"));
+        TokenResponse secondLogin = authService.login(new LoginRequest("disabled@test.com", "Pass1234!"));
+
+        // Disable the user (simulates the deactivation path)
+        var user = userRepository.findByEmailIgnoreCase("disabled@test.com").orElseThrow();
+        user.setActivo(false);
+        userRepository.save(user);
+
+        // Every session's refresh token must now be rejected
+        assertThrows(Exception.class, () ->
+                authService.refresh(firstLogin.refreshToken())
+        );
+        assertThrows(Exception.class, () ->
+                authService.refresh(secondLogin.refreshToken())
+        );
+    }
 }

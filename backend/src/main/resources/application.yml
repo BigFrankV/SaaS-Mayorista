@@ -24,6 +24,9 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      # Empty default = no auth, keeping current behavior for stacks without a
+      # password. infra/ sets REDIS_PASSWORD together with redis --requirepass.
+      password: ${REDIS_PASSWORD:}
   cache:
     type: redis
     redis:
@@ -34,7 +37,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
@@ -62,9 +65,23 @@ app:
       access-secret: ${JWT_ACCESS_SECRET:change_me_access_secret_very_long}
       refresh-secret: ${JWT_REFRESH_SECRET:change_me_refresh_secret_very_long}
       access-ttl-seconds: ${JWT_ACCESS_TTL_SECONDS:900}
-      refresh-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:1209600}
+      refresh-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:604800}
+    cookie:
+      name: ${REFRESH_COOKIE_NAME:refresh_token}
+      # Secure is enabled per-profile (true in prod, false in dev where the API is http).
+      secure: ${REFRESH_COOKIE_SECURE:false}
+      same-site: ${REFRESH_COOKIE_SAME_SITE:Lax}
+      path: ${REFRESH_COOKIE_PATH:/}
+      # Cookie lifetime follows the refresh-token TTL so both expire together.
+      max-age-seconds: ${JWT_REFRESH_TTL_SECONDS:604800}
+    # Swagger/OpenAPI is public only in dev (application-dev.yml sets this to true).
+    swagger-enabled: ${APP_SWAGGER_ENABLED:false}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  dashboard:
+    # Zone used by dashboard KPIs and the sale-list date filters. Accepts a
+    # real zone id (e.g. America/Santiago) or "systemDefault" for the JVM zone.
+    time-zone: ${APP_DASHBOARD_TIME_ZONE:systemDefault}
   bootstrap:
     enabled: ${APP_BOOTSTRAP_ENABLED:true}
     tenant-name: ${APP_BOOTSTRAP_TENANT_NAME:Distribuidora Demo}
@@ -73,4 +90,7 @@ app:
     tenant-address: ${APP_BOOTSTRAP_TENANT_ADDRESS:Casa matriz}
     admin-name: ${APP_BOOTSTRAP_ADMIN_NAME:Administrador}
     admin-email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@mayorista.local}
-    admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123!}
+    # No default password on purpose (S10): dev generates a random one when empty
+    # (DevBootstrapSeeder logs it once); any other profile fails fast at startup
+    # if bootstrap is enabled without a password (BootstrapAdminPasswordGuard).
+    admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}

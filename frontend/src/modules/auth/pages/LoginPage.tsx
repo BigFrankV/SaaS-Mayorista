@@ -1,10 +1,12 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api/authApi';
 import { useAuthStore } from '../../../shared/store/authStore';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const status = useAuthStore((s) => s.status);
+  const login = useAuthStore((s) => s.login);
   const setTokens = useAuthStore((s) => s.setTokens);
   const setUser = useAuthStore((s) => s.setUser);
 
@@ -17,26 +19,34 @@ export function LoginPage() {
   const [name, setName] = useState('Administrador');
   const [error, setError] = useState<string | null>(null);
 
+  // If a session was recovered via the refresh cookie (hydrate), go straight in.
+  useEffect(() => {
+    if (status === 'authenticated') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [status, navigate]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
-      const tokenData = mode === 'login'
-        ? await authApi.login(email, password)
-        : await authApi.bootstrap({
-            nombreEmpresa: tenantName,
-            rutEmpresa: rut,
-            giroEmpresa: giro,
-            nombreAdmin: name,
-            emailAdmin: email,
-            passwordAdmin: password
-          });
-
-      setTokens(tokenData.accessToken, tokenData.refreshToken);
-      try {
-        const me = await authApi.me();
-        setUser(me);
-      } catch { /* ignora error de perfil post-login */ }
+      if (mode === 'login') {
+        await login(email, password);
+      } else {
+        const tokenData = await authApi.bootstrap({
+          nombreEmpresa: tenantName,
+          rutEmpresa: rut,
+          giroEmpresa: giro,
+          nombreAdmin: name,
+          emailAdmin: email,
+          passwordAdmin: password
+        });
+        setTokens(tokenData.accessToken);
+        try {
+          const me = await authApi.me();
+          setUser(me);
+        } catch { /* ignora error de perfil post-bootstrap */ }
+      }
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'No fue posible autenticar');

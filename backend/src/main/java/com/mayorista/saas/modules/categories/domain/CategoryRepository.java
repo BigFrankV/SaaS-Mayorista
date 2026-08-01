@@ -9,5 +9,6 @@ import java.util.UUID;
 public interface CategoryRepository extends JpaRepository<CategoryEntity, UUID> {
     List<CategoryEntity> findAllByTenantIdAndActivoTrue(UUID tenantId);
     Optional<CategoryEntity> findByIdAndTenantId(UUID id, UUID tenantId);
+    Optional<CategoryEntity> findByTenantIdAndNombreIgnoreCase(UUID tenantId, String nombre);
     boolean existsByTenantIdAndNombreIgnoreCase(UUID tenantId, String nombre);
 }

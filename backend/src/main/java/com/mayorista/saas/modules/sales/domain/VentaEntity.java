@@ -11,6 +11,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import com.mayorista.saas.modules.clientes.domain.ClienteEntity;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -61,7 +62,12 @@ public class VentaEntity {
     @Column(name = "anulada", nullable = false)
     private boolean anulada = false;
 
+    // Batch-fetches details for a whole page of ventas in one query instead of
+    // one query per venta (N+1). A JOIN FETCH is NOT used on the paginated
+    // queries because collection fetch + firstResult/maxResults breaks the
+    // count query in Hibernate; batch fetch fixes the N+1 without touching it.
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
     private List<DetalleVentaEntity> detalles = new ArrayList<>();
 
     public UUID getId() {

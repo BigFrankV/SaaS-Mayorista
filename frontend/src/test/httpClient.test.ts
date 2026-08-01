@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const { mockInstance, mockPost, mockSetTokens, mockClear, mockGetState } = vi.hoisted(
   () => {
@@ -39,6 +39,16 @@ vi.mock('../shared/store/authStore', () => ({
   useAuthStore: { getState: mockGetState },
 }));
 
+function stubLocation(pathname = '/app') {
+  const assign = vi.fn();
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    writable: true,
+    value: { pathname, href: `http://localhost${pathname}`, assign },
+  });
+  return assign;
+}
+
 describe('httpClient interceptors', () => {
   let requestHandler: (config: any) => any;
   let responseErrorHandler: (error: any) => Promise<any>;
@@ -46,6 +56,7 @@ describe('httpClient interceptors', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     localStorage.clear();
+    stubLocation();
 
     vi.resetModules();
     await import('../shared/api/httpClient');
@@ -54,11 +65,14 @@ describe('httpClient interceptors', () => {
     responseErrorHandler = mockInstance.interceptors.response.use.mock.calls[0][1];
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   describe('request interceptor', () => {
     it('adds Bearer token when accessToken exists', () => {
       mockGetState.mockReturnValue({
         accessToken: 'test-token',
-        refreshToken: null,
         setTokens: mockSetTokens,
         clear: mockClear,
       });
@@ -72,7 +86,6 @@ describe('httpClient interceptors', () => {
     it('does not add Authorization when no token', () => {
       mockGetState.mockReturnValue({
         accessToken: null,
-        refreshToken: null,
         setTokens: mockSetTokens,
         clear: mockClear,
       });
@@ -91,7 +104,6 @@ describe('httpClient interceptors', () => {
 
       mockGetState.mockReturnValue({
         accessToken: 'old-access',
-        refreshToken: 'old-refresh',
         setTokens: mockSetTokens,
         clear: mockClear,
       });
@@ -99,7 +111,7 @@ describe('httpClient interceptors', () => {
       mockPost.mockResolvedValue({
         data: {
           accessToken: 'new-access',
-          refreshToken: 'new-refresh',
+          refreshToken: null,
           tokenType: 'Bearer',
           accessTokenExpiresIn: 3600,
         },
@@ -110,9 +122,10 @@ describe('httpClient interceptors', () => {
       expect(mockPost).toHaveBeenCalledTimes(1);
       expect(mockPost).toHaveBeenCalledWith(
         expect.stringContaining('/auth/refresh'),
-        { refreshToken: 'old-refresh' },
+        {},
+        { withCredentials: true },
       );
-      expect(mockSetTokens).toHaveBeenCalledWith('new-access', 'new-refresh');
+      expect(mockSetTokens).toHaveBeenCalledWith('new-access');
       expect(originalRequest).toHaveProperty('_retry', true);
       expect(result).toEqual({ data: 'retry-success' });
     });
@@ -120,7 +133,6 @@ describe('httpClient interceptors', () => {
     it('queues concurrent requests during refresh', async () => {
       mockGetState.mockReturnValue({
         accessToken: 'token',
-        refreshToken: 'refresh',
         setTokens: mockSetTokens,
         clear: mockClear,
       });
@@ -142,7 +154,7 @@ describe('httpClient interceptors', () => {
       resolveRefresh!({
         data: {
           accessToken: 'new-access',
-          refreshToken: 'new-refresh',
+          refreshToken: null,
           tokenType: 'Bearer',
           accessTokenExpiresIn: 3600,
         },
@@ -151,20 +163,19 @@ describe('httpClient interceptors', () => {
       const results = await Promise.all([promise1, promise2, promise3]);
 
       expect(mockPost).toHaveBeenCalledTimes(1);
-      expect(mockSetTokens).toHaveBeenCalledWith('new-access', 'new-refresh');
+      expect(mockSetTokens).toHaveBeenCalledWith('new-access');
       expect(results).toHaveLength(3);
       for (const r of results) {
         expect(r).toEqual({ data: 'retry-success' });
       }
     });
 
-    it('clears tokens when refresh fails', async () => {
+    it('clears tokens and redirects to /login when refresh fails', async () => {
       const originalRequest = { url: '/test', headers: {} };
       const error = { config: originalRequest, response: { status: 401 } };
 
       mockGetState.mockReturnValue({
         accessToken: 'old-access',
-        refreshToken: 'old-refresh',
         setTokens: mockSetTokens,
         clear: mockClear,
       });
@@ -174,6 +185,7 @@ describe('httpClient interceptors', () => {
 
       await expect(responseErrorHandler(error)).rejects.toBe(refreshError);
       expect(mockClear).toHaveBeenCalled();
+      expect(window.location.assign).toHaveBeenCalledWith('/login');
     });
 
     it('passes through non-401 errors', async () => {
@@ -185,13 +197,12 @@ describe('httpClient interceptors', () => {
       expect(mockClear).not.toHaveBeenCalled();
     });
 
-    it('clears tokens when no refreshToken available on 401', async () => {
+    it('clears tokens and redirects when no accessToken available on 401', async () => {
       const originalRequest = { url: '/test', headers: {} };
       const error = { config: originalRequest, response: { status: 401 } };
 
       mockGetState.mockReturnValue({
-        accessToken: 'some-token',
-        refreshToken: null,
+        accessToken: null,
         setTokens: mockSetTokens,
         clear: mockClear,
       });
@@ -199,6 +210,26 @@ describe('httpClient interceptors', () => {
       await expect(responseErrorHandler(error)).rejects.toBe(error);
       expect(mockClear).toHaveBeenCalled();
       expect(mockPost).not.toHaveBeenCalled();
+      expect(window.location.assign).toHaveBeenCalledWith('/login');
+    });
+
+    it('does not redirect when already on /login', async () => {
+      stubLocation('/login');
+      const originalRequest = { url: '/test', headers: {} };
+      const error = { config: originalRequest, response: { status: 401 } };
+
+      mockGetState.mockReturnValue({
+        accessToken: 'old-access',
+        setTokens: mockSetTokens,
+        clear: mockClear,
+      });
+
+      const refreshError = new Error('Refresh failed');
+      mockPost.mockRejectedValue(refreshError);
+
+      await expect(responseErrorHandler(error)).rejects.toBe(refreshError);
+      expect(mockClear).toHaveBeenCalled();
+      expect(window.location.assign).not.toHaveBeenCalled();
     });
   });
 });
