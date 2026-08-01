@@ -1,0 +1,11 @@
+# The production build context is the repo root (shared by backend and frontend images).
+# Excluding these keeps builds fast and prevents host artifacts (node_modules, dist,
+# target) from being copied into the images or overwriting container-side installs.
+.git
+.idea
+.vscode
+**/node_modules
+**/dist
+**/target
+**/logs
+**/*.log

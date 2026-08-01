@@ -16,11 +16,14 @@ import com.mayorista.saas.shared.security.JwtTokenData;
 import com.mayorista.saas.shared.security.LoginLockoutService;
 import com.mayorista.saas.shared.security.TokenBlocklistService;
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -38,6 +41,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final TokenBlocklistService tokenBlocklistService;
     private final LoginLockoutService loginLockoutService;
+
+    @Value("${app.bootstrap.enabled:true}")
+    private boolean bootstrapEnabled;
 
     public AuthService(
             AuthenticationManager authenticationManager,
@@ -61,6 +67,9 @@ public class AuthService {
 
     @Transactional
     public TokenResponse bootstrap(BootstrapRequest request) {
+        if (!bootstrapEnabled) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bootstrap endpoint is disabled");
+        }
         if (userRepository.findByEmailIgnoreCase(request.emailAdmin()).isPresent()) {
             throw new IllegalArgumentException("El correo del administrador ya existe");
         }

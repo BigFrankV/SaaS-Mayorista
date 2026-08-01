@@ -54,6 +54,10 @@ app:
       lockout-minutes: ${LOGIN_LOCKOUT_MINUTES:15}
     refresh:
       rate-limit-per-minute: ${REFRESH_RATE_LIMIT_PER_MINUTE:5}
+    bootstrap:
+      rate-limit-per-minute: ${BOOTSTRAP_RATE_LIMIT_PER_MINUTE:5}
+    registration:
+      rate-limit-per-minute: ${REGISTRATION_RATE_LIMIT_PER_MINUTE:5}
     jwt:
       access-secret: ${JWT_ACCESS_SECRET:change_me_access_secret_very_long}
       refresh-secret: ${JWT_REFRESH_SECRET:change_me_refresh_secret_very_long}

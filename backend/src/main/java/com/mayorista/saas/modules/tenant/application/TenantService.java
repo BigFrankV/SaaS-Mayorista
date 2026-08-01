@@ -9,6 +9,8 @@ import com.mayorista.saas.modules.tenant.domain.TenantRepository;
 import com.mayorista.saas.modules.users.domain.UserEntity;
 import com.mayorista.saas.modules.users.domain.UserRepository;
 import com.mayorista.saas.modules.users.domain.UserRole;
+import com.mayorista.saas.shared.security.SecurityUtils;
+import com.mayorista.saas.shared.tenant.TenantContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -68,22 +70,24 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public List<TenantResponse> list() {
-        return tenantRepository.findAll()
-                .stream()
-                .map(TenantResponse::from)
-                .toList();
+        if (SecurityUtils.isSuperAdmin()) {
+            return tenantRepository.findAll()
+                    .stream()
+                    .map(TenantResponse::from)
+                    .toList();
+        }
+        return tenantRepository.findById(requireTenant())
+                .map(entity -> List.of(TenantResponse.from(entity)))
+                .orElseGet(List::of);
     }
 
     @Transactional(readOnly = true)
     public TenantResponse getById(UUID id) {
-        TenantEntity entity = tenantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant no encontrado: " + id));
-        return TenantResponse.from(entity);
+        return TenantResponse.from(findAccessibleTenant(id));
     }
 
     public TenantResponse update(UUID id, TenantUpdateRequest request) {
-        TenantEntity entity = tenantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant no encontrado: " + id));
+        TenantEntity entity = findAccessibleTenant(id);
 
         if (request.nombreEmpresa() != null) {
             entity.setNombreEmpresa(request.nombreEmpresa());
@@ -98,9 +102,24 @@ public class TenantService {
     }
 
     public void delete(UUID id) {
-        if (!tenantRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant no encontrado: " + id);
+        TenantEntity entity = findAccessibleTenant(id);
+        tenantRepository.delete(entity);
+    }
+
+    private TenantEntity findAccessibleTenant(UUID id) {
+        TenantEntity entity = tenantRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found: " + id));
+        if (!SecurityUtils.isSuperAdmin() && !entity.getId().equals(requireTenant())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found: " + id);
         }
-        tenantRepository.deleteById(id);
+        return entity;
+    }
+
+    private UUID requireTenant() {
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not resolved for request");
+        }
+        return tenantId;
     }
 }

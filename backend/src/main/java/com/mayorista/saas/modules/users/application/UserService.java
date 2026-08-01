@@ -6,6 +6,7 @@ import com.mayorista.saas.modules.users.api.UserResponse;
 import com.mayorista.saas.modules.users.domain.UserEntity;
 import com.mayorista.saas.modules.users.domain.UserRepository;
 import com.mayorista.saas.modules.users.domain.UserRole;
+import com.mayorista.saas.shared.security.SecurityUtils;
 import com.mayorista.saas.shared.tenant.TenantContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,11 @@ public class UserService {
     public UserResponse create(CreateUserRequest request) {
         UUID tenantId = requireTenant();
 
+        if (request.rol() == UserRole.SUPER_ADMIN && !SecurityUtils.isSuperAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only a SUPER_ADMIN can assign the SUPER_ADMIN role");
+        }
+
         if (userRepository.findByEmailIgnoreCase(request.email()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya existe");
         }
@@ -76,6 +82,10 @@ public class UserService {
         if (!user.getTenantId().equals(tenantId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         }
+        if (user.getRol() == UserRole.SUPER_ADMIN && !SecurityUtils.isSuperAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only a SUPER_ADMIN can modify a SUPER_ADMIN user");
+        }
 
         if (request.email() != null) {
             user.setEmail(request.email().toLowerCase());
@@ -84,6 +94,10 @@ public class UserService {
             user.setNombre(request.nombre());
         }
         if (request.rol() != null) {
+            if (request.rol() == UserRole.SUPER_ADMIN && !SecurityUtils.isSuperAdmin()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Only a SUPER_ADMIN can assign the SUPER_ADMIN role");
+            }
             user.setRol(request.rol());
         }
         if (request.password() != null) {
@@ -103,6 +117,11 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         if (!user.getTenantId().equals(tenantId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+
+        if (user.getRol() == UserRole.SUPER_ADMIN && !SecurityUtils.isSuperAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only a SUPER_ADMIN can delete a SUPER_ADMIN user");
         }
 
         if (user.getRol() == UserRole.ADMIN) {

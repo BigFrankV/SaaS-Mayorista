@@ -32,5 +32,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379).toString());
+        registry.add("app.security.jwt.access-secret", () -> "test-access-secret-2f4a9c1b-8d3e-4a5f-9b6c-7d8e9f0a1b2c");
+        registry.add("app.security.jwt.refresh-secret", () -> "test-refresh-secret-1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d");
     }
 }

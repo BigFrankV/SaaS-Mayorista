@@ -1,3 +1,15 @@
+# Production stack for SaaS-Mayorista.
+#
+# TLS certificates (Let's Encrypt / certbot):
+#   1. Point a DNS A record at this host, then set SSL_DOMAIN (and SSL_EMAIL) in .env
+#   2. Start the stack (HTTP-only until certificates exist), then issue once:
+#        docker compose -f infra/docker/prod/docker-compose.yml run --rm certbot certonly --webroot -w /var/www/certbot -d ${SSL_DOMAIN} --email ${SSL_EMAIL} --agree-tos --no-eff-email
+#   3. Reload nginx so it picks up the new certificate:
+#        docker compose -f infra/docker/prod/docker-compose.yml exec frontend nginx -s reload
+#   Renewal (run periodically on the host, e.g. cron):
+#        docker compose -f infra/docker/prod/docker-compose.yml run --rm certbot renew --webroot -w /var/www/certbot --quiet
+#        docker compose -f infra/docker/prod/docker-compose.yml exec frontend nginx -s reload
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -34,20 +46,42 @@ services:
     networks:
       - saas_network
 
-  nginx:
-    image: nginx:1.27-alpine
+  # Serves the built SPA and reverse-proxies /api/ to the backend over TLS.
+  frontend:
+    build:
+      context: ../../..
+      dockerfile: frontend/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      # Rendered into nginx.conf by envsubst at container startup (see `command`).
+      SSL_DOMAIN: ${SSL_DOMAIN:-tu-dominio.com}
     volumes:
       - ../../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - certbot_data:/etc/letsencrypt
       - certbot_www:/var/www/certbot
     depends_on:
       - backend
+    # nginx cannot expand env vars itself: render ${SSL_DOMAIN} into a copy of the
+    # config and start nginx pointing at it (the bind mount stays untouched).
+    command: /bin/sh -c "envsubst '$${SSL_DOMAIN}' < /etc/nginx/nginx.conf > /tmp/nginx.conf && exec nginx -c /tmp/nginx.conf -g 'daemon off;'"
     networks:
       - saas_network
+
+  # Certificate issuer. Uncomment once SSL_DOMAIN / SSL_EMAIL are set in .env and the
+  # domain resolves to this host, then issue certificates with the command in the header
+  # comment (or `docker compose up certbot`). Keep it around for renewals.
+  # certbot:
+  #   image: certbot/certbot
+  #   restart: "no"
+  #   volumes:
+  #     - certbot_data:/etc/letsencrypt
+  #     - certbot_www:/var/www/certbot
+  #   command: certonly --webroot -w /var/www/certbot -d ${SSL_DOMAIN} --email ${SSL_EMAIL} --agree-tos --no-eff-email
+  #   networks:
+  #     - saas_network
 
 volumes:
   postgres_data:

@@ -34,26 +34,26 @@ public class TenantController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<TenantResponse>> list() {
         return ResponseEntity.ok(tenantService.list());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<TenantResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(tenantService.getById(id));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<TenantResponse> update(@PathVariable UUID id,
                                                   @Valid @RequestBody TenantUpdateRequest request) {
         return ResponseEntity.ok(tenantService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         tenantService.delete(id);
         return ResponseEntity.noContent().build();
