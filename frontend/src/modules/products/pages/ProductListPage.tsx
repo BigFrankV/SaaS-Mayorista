@@ -30,7 +30,10 @@ export function ProductListPage() {
     async (p = currentPage) => {
       setLoading(true);
       try {
-        const data = await productsApi.list(p, 20, { search: search || undefined });
+        const data = await productsApi.list(p, 20, {
+          search: search || undefined,
+          categoria: categoria || undefined,
+        });
         setPage(data);
         setCurrentPage(data.number);
       } catch {
@@ -39,7 +42,7 @@ export function ProductListPage() {
         setLoading(false);
       }
     },
-    [currentPage, search],
+    [currentPage, search, categoria],
   );
 
   useEffect(() => {

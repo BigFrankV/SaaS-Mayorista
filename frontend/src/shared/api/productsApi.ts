@@ -12,7 +12,7 @@ export type CreateProductPayload = {
 };
 
 export const productsApi = {
-  list: async (page = 0, size = 20, params?: { stockBajo?: boolean; search?: string }): Promise<PageResponse<Product>> => {
+  list: async (page = 0, size = 20, params?: { stockBajo?: boolean; search?: string; categoria?: string }): Promise<PageResponse<Product>> => {
     const { data } = await httpClient.get<PageResponse<Product>>('/products', {
       params: { page, size, ...params }
     });

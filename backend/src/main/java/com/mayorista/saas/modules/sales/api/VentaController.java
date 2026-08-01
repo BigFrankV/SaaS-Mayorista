@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,8 +18,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
@@ -45,8 +48,14 @@ public class VentaController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VENDEDOR', 'ROLE_CONTADOR')")
     public ResponseEntity<Page<VentaResponse>> list(
             @PageableDefault(size = 20, sort = "fechaVenta", direction = Sort.Direction.DESC) Pageable pageable,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String tipoDocumento,
+            @RequestParam(required = false) Boolean anulada,
             Authentication authentication) {
-        return ResponseEntity.ok(ventaService.list(pageable));
+        JwtRequestPrincipal principal = (JwtRequestPrincipal) authentication.getPrincipal();
+        return ResponseEntity.ok(ventaService.list(principal.tenantId(), pageable, fechaDesde, fechaHasta, search, tipoDocumento, anulada));
     }
 
     @GetMapping("/{id}")

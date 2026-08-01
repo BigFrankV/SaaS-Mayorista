@@ -67,10 +67,41 @@ export type UpdateProductPayload = {
   precioNeto?: number;
 };
 
+export type Client = {
+  id: string;
+  rut: string;
+  nombre: string;
+  giro?: string;
+  direccion?: string;
+  email?: string;
+  telefono?: string;
+  activo: boolean;
+  creadoEn: string;
+};
+
+export type CreateClientPayload = {
+  rut: string;
+  nombre: string;
+  giro?: string;
+  direccion?: string;
+  email?: string;
+  telefono?: string;
+};
+
+export type UpdateClientPayload = {
+  nombre?: string;
+  giro?: string;
+  direccion?: string;
+  email?: string;
+  telefono?: string;
+};
+
 export type SalePayload = {
   tipoDocumento: 'BOLETA' | 'FACTURA';
+  clienteId?: string;
   rutCliente?: string;
   giroCliente?: string;
+  nombreCliente?: string;
   items: Array<{ productoId: string; cantidad: number }>;
 };
 
@@ -78,13 +109,16 @@ export type SaleResponse = {
   id: string;
   tenantId: string;
   usuarioId: string;
+  usuarioNombre?: string;
   tipoDocumento: string;
   rutCliente?: string;
   giroCliente?: string;
+  nombreCliente?: string;
   totalNeto: number;
   iva: number;
   total: number;
   fechaVenta: string;
+  anulada: boolean;
   detalles: Array<{
     id: string;
     productoId: string;

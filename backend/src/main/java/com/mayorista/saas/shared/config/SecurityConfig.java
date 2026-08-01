@@ -2,7 +2,7 @@ package com.mayorista.saas.shared.config;
 
 import com.mayorista.saas.shared.security.CustomUserDetailsService;
 import com.mayorista.saas.shared.security.JwtAuthenticationFilter;
-import com.mayorista.saas.shared.security.LoginRateLimitFilter;
+import com.mayorista.saas.shared.security.AuthRateLimitFilter;
 import com.mayorista.saas.shared.tenant.TenantFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +31,7 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final LoginRateLimitFilter loginRateLimitFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final TenantFilter tenantFilter;
     private final CustomUserDetailsService userDetailsService;
@@ -40,12 +40,12 @@ public class SecurityConfig {
     private String allowedOrigins;
 
     public SecurityConfig(
-            LoginRateLimitFilter loginRateLimitFilter,
+            AuthRateLimitFilter authRateLimitFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             TenantFilter tenantFilter,
             CustomUserDetailsService userDetailsService
     ) {
-        this.loginRateLimitFilter = loginRateLimitFilter;
+        this.authRateLimitFilter = authRateLimitFilter;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.tenantFilter = tenantFilter;
         this.userDetailsService = userDetailsService;
@@ -67,7 +67,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/bootstrap", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/tenants/register").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(tenantFilter, UsernamePasswordAuthenticationFilter.class);
 

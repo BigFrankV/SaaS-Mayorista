@@ -39,10 +39,9 @@ public class DashboardService {
         Instant startOfYesterday = today.minusDays(1).atStartOfDay(zone).toInstant();
         Instant startOfMonth = today.withDayOfMonth(1).atStartOfDay(zone).toInstant();
         Instant startOfLastMonth = today.minusMonths(1).withDayOfMonth(1).atStartOfDay(zone).toInstant();
-        Instant endOfLastMonth = today.withDayOfMonth(1).atStartOfDay(zone).toInstant();
 
         BigDecimal totalVentasHoy = BigDecimal.valueOf(ventaRepository.sumTotalSince(tenantId, startOfToday));
-        BigDecimal totalVentasAyer = BigDecimal.valueOf(ventaRepository.sumTotalSince(tenantId, startOfYesterday));
+        BigDecimal totalVentasAyer = BigDecimal.valueOf(ventaRepository.sumTotalBetween(tenantId, startOfYesterday, startOfToday));
         BigDecimal totalVentasEsteMes = BigDecimal.valueOf(ventaRepository.sumTotalSince(tenantId, startOfMonth));
         BigDecimal totalVentasMesAnterior = BigDecimal.valueOf(ventaRepository.sumTotalSince(tenantId, startOfLastMonth));
         // Subtract current month from last-month-and-current range for exact last month

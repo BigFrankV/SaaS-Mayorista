@@ -16,8 +16,31 @@ public interface VentaRepository extends JpaRepository<VentaEntity, UUID> {
 
     Optional<VentaEntity> findByIdAndTenantId(UUID id, UUID tenantId);
 
+    @Query("""
+        SELECT v FROM VentaEntity v
+        WHERE v.tenantId = :tenantId
+        AND (:fechaDesde IS NULL OR v.fechaVenta >= :fechaDesde)
+        AND (:fechaHasta IS NULL OR v.fechaVenta <= :fechaHasta)
+        AND (:search IS NULL OR LOWER(v.rutCliente) LIKE LOWER(CONCAT('%', :search, '%'))
+              OR LOWER(v.nombreCliente) LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (:tipoDocumento IS NULL OR v.tipoDocumento = :tipoDocumento)
+        AND (:anulada IS NULL OR v.anulada = :anulada)
+        ORDER BY v.fechaVenta DESC
+    """)
+    Page<VentaEntity> findAllByTenantIdWithFilters(
+            @Param("tenantId") UUID tenantId,
+            @Param("fechaDesde") Instant fechaDesde,
+            @Param("fechaHasta") Instant fechaHasta,
+            @Param("search") String search,
+            @Param("tipoDocumento") String tipoDocumento,
+            @Param("anulada") Boolean anulada,
+            Pageable pageable);
+
     @Query("SELECT COALESCE(SUM(v.total), 0) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.fechaVenta >= :since")
     Long sumTotalSince(@Param("tenantId") UUID tenantId, @Param("since") Instant since);
+
+    @Query("SELECT COALESCE(SUM(v.total), 0) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.fechaVenta >= :from AND v.fechaVenta < :to")
+    Long sumTotalBetween(@Param("tenantId") UUID tenantId, @Param("from") Instant from, @Param("to") Instant to);
 
     @Query("SELECT COUNT(v) FROM VentaEntity v WHERE v.tenantId = :tenantId AND v.fechaVenta >= :since")
     long countSince(@Param("tenantId") UUID tenantId, @Param("since") Instant since);

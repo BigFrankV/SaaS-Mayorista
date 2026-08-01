@@ -7,8 +7,8 @@ export const dashboardApi = {
     return data;
   },
 
-  getRecentSales: async (limit = 5): Promise<{ content: VentaResumen[] }> => {
-    const { data } = await httpClient.get<{ content: VentaResumen[] }>('/dashboard/recent-sales', {
+  getRecentSales: async (limit = 5): Promise<VentaResumen[]> => {
+    const { data } = await httpClient.get<VentaResumen[]>('/dashboard/recent-sales', {
       params: { limit },
     });
     return data;

@@ -45,6 +45,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            // Store access token info for downstream use (e.g. logout blocklist)
+            request.setAttribute("access_jti", jti);
+            request.setAttribute("access_token", token);
+
             UUID userId = UUID.fromString(claims.getSubject());
             UUID tenantId = UUID.fromString(String.valueOf(claims.get("tenant_id")));
             String role = String.valueOf(claims.get("rol"));

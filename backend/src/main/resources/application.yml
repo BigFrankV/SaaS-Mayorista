@@ -19,6 +19,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    baseline-on-migrate: true
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -39,12 +40,20 @@ management:
       probes:
         enabled: true
 
+logging:
+  file:
+    name: ${LOG_FILE:logs/app.log}
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
 app:
   security:
     login:
       rate-limit-per-minute: ${LOGIN_RATE_LIMIT_PER_MINUTE:10}
       max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
       lockout-minutes: ${LOGIN_LOCKOUT_MINUTES:15}
+    refresh:
+      rate-limit-per-minute: ${REFRESH_RATE_LIMIT_PER_MINUTE:5}
     jwt:
       access-secret: ${JWT_ACCESS_SECRET:change_me_access_secret_very_long}
       refresh-secret: ${JWT_REFRESH_SECRET:change_me_refresh_secret_very_long}

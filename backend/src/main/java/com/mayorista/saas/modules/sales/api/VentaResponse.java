@@ -8,12 +8,15 @@ public record VentaResponse(
         UUID id,
         UUID tenantId,
         UUID usuarioId,
+        String usuarioNombre,
         String tipoDocumento,
         String rutCliente,
         String giroCliente,
+        String nombreCliente,
         int totalNeto,
         int iva,
         int total,
         Instant fechaVenta,
+        boolean anulada,
         List<DetalleResponse> detalles
 ) {}

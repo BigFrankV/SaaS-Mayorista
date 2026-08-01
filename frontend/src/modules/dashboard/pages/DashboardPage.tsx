@@ -33,7 +33,7 @@ export function DashboardPage() {
         if (!cancelled) {
           setState({
             kpi: kpiData,
-            recentSales: salesData.content,
+            recentSales: salesData,
             loading: false,
             error: null,
           });
@@ -128,7 +128,7 @@ export function DashboardPage() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">Últimas Ventas</span>
-          <a href="/pos" className="text-sm" style={{ color: 'var(--color-primary)' }}>Ver todas →</a>
+          <a href="/sales" className="text-sm" style={{ color: 'var(--color-primary)' }}>Ver todas →</a>
         </div>
         <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
           <table className="data-table">

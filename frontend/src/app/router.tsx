@@ -5,17 +5,24 @@ import { RegistrationPage } from '../modules/landing/pages/RegistrationPage';
 import { LoginPage } from '../modules/auth/pages/LoginPage';
 import { ProductListPage } from '../modules/products/pages/ProductListPage';
 import { POSPage } from '../modules/sales/pages/POSPage';
+import { SalesListPage } from '../modules/sales/pages/SalesListPage';
 import { DashboardPage } from '../modules/dashboard/pages/DashboardPage';
 import { UserListPage } from '../modules/users/pages/UserListPage';
+import { ClientsPage } from '../modules/clients/pages/ClientsPage';
 import { RoleRoute } from '../modules/users/components/RoleRoute';
 import { useAuthStore } from '../shared/store/authStore';
 import { authApi } from '../shared/api/authApi';
 import { AppLayout } from '../shared/ui/AppLayout';
+import { NotFoundPage } from '../shared/pages/NotFoundPage';
+import { ServerErrorPage } from '../shared/pages/ServerErrorPage';
+import { ForbiddenPage } from '../shared/pages/ForbiddenPage';
 
 const routeMeta: Record<string, { title: string; breadcrumb: string }> = {
   '/dashboard': { title: 'Resumen General', breadcrumb: 'Dashboard' },
   '/products': { title: 'Inventario', breadcrumb: 'Productos' },
+  '/sales': { title: 'Listado de Ventas', breadcrumb: 'Ventas' },
   '/pos': { title: 'Punto de Venta', breadcrumb: 'POS' },
+  '/clientes': { title: 'Clientes', breadcrumb: 'Clientes' },
   '/users': { title: 'Gestión de Usuarios', breadcrumb: 'Usuarios' },
 };
 
@@ -71,6 +78,16 @@ export function AppRouter() {
         }
       />
       <Route
+        path="/sales"
+        element={
+          <ProtectedRoute>
+            <PageWithLayout path="/sales">
+              <SalesListPage />
+            </PageWithLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/pos"
         element={
           <ProtectedRoute>
@@ -91,6 +108,16 @@ export function AppRouter() {
         }
       />
       <Route
+        path="/clientes"
+        element={
+          <ProtectedRoute>
+            <PageWithLayout path="/clientes">
+              <ClientsPage />
+            </PageWithLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/users"
         element={
           <ProtectedRoute>
@@ -102,7 +129,12 @@ export function AppRouter() {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Error pages */}
+      <Route path="/403" element={<ForbiddenPage />} />
+      <Route path="/500" element={<ServerErrorPage />} />
+
+      {/* Catch-all: 404 */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

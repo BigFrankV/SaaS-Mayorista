@@ -72,6 +72,7 @@ export function POSPage() {
   const [tipoDocumento, setTipoDocumento] = useState<'BOLETA' | 'FACTURA'>('BOLETA');
   const [rutCliente, setRutCliente] = useState('');
   const [giroCliente, setGiroCliente] = useState('');
+  const [nombreCliente, setNombreCliente] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<Notification | null>(null);
 
@@ -110,7 +111,7 @@ export function POSPage() {
     try {
       await salesApi.create({
         tipoDocumento,
-        ...(tipoDocumento === 'FACTURA' ? { rutCliente, giroCliente } : {}),
+        ...(tipoDocumento === 'FACTURA' ? { rutCliente, giroCliente, nombreCliente: nombreCliente || undefined } : {}),
         items: cart.map((i) => ({
           productoId: i.producto.id,
           cantidad: i.cantidad
@@ -120,6 +121,7 @@ export function POSPage() {
       dispatch({ type: 'CLEAR' });
       setRutCliente('');
       setGiroCliente('');
+      setNombreCliente('');
       setNotification({ type: 'success', message: 'Venta registrada exitosamente' });
     } catch (err: unknown) {
       const msg =
@@ -198,6 +200,13 @@ export function POSPage() {
                     placeholder="Giro Cliente"
                     value={giroCliente}
                     onChange={(e) => setGiroCliente(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Nombre Cliente"
+                    value={nombreCliente}
+                    onChange={(e) => setNombreCliente(e.target.value)}
                   />
                 </div>
               )}
