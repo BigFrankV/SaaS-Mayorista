@@ -10,8 +10,10 @@ import java.util.UUID;
 
 public record CreateVentaRequest(
         @NotBlank String tipoDocumento,
+        UUID clienteId,
         String rutCliente,
         String giroCliente,
+        @Size(max = 255) String nombreCliente,
         @NotNull @Size(min = 1) List<ItemVenta> items
 ) {
     public record ItemVenta(@NotNull UUID productoId, @Min(1) int cantidad) {}

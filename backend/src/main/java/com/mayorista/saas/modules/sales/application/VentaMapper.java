@@ -16,38 +16,36 @@ public final class VentaMapper {
     }
 
     public static VentaResponse toResponse(VentaEntity entity) {
-        return new VentaResponse(
-                entity.getId(),
-                entity.getTenantId(),
-                entity.getUsuarioId(),
-                entity.getTipoDocumento(),
-                entity.getRutCliente(),
-                entity.getGiroCliente(),
-                entity.getTotalNeto(),
-                entity.getIva(),
-                entity.getTotal(),
-                entity.getFechaVenta(),
-                entity.getDetalles().stream()
-                        .map(d -> toDetalleResponse(d, null))
-                        .toList()
-        );
+        return toResponseWithProductNames(entity, Map.of(), null, entity.getNombreCliente());
     }
 
     public static VentaResponse toResponseWithProductNames(
             VentaEntity entity,
             Map<UUID, ProductEntity> productMap
     ) {
+        return toResponseWithProductNames(entity, productMap, null, entity.getNombreCliente());
+    }
+
+    public static VentaResponse toResponseWithProductNames(
+            VentaEntity entity,
+            Map<UUID, ProductEntity> productMap,
+            String usuarioNombre,
+            String nombreCliente
+    ) {
         return new VentaResponse(
                 entity.getId(),
                 entity.getTenantId(),
                 entity.getUsuarioId(),
+                usuarioNombre,
                 entity.getTipoDocumento(),
                 entity.getRutCliente(),
                 entity.getGiroCliente(),
+                nombreCliente,
                 entity.getTotalNeto(),
                 entity.getIva(),
                 entity.getTotal(),
                 entity.getFechaVenta(),
+                entity.isAnulada(),
                 entity.getDetalles().stream()
                         .map(d -> {
                             ProductEntity p = productMap.get(d.getProductoId());

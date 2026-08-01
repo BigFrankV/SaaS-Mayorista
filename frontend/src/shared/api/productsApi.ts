@@ -4,13 +4,15 @@ import type { PageResponse, Product, UpdateProductPayload } from './types';
 export type CreateProductPayload = {
   codigoBarras: string;
   nombre: string;
+  categoria?: string;
+  descripcion?: string;
   stockActual: number;
   stockMinimo: number;
   precioNeto: number;
 };
 
 export const productsApi = {
-  list: async (page = 0, size = 20, params?: { stockBajo?: boolean; search?: string }): Promise<PageResponse<Product>> => {
+  list: async (page = 0, size = 20, params?: { stockBajo?: boolean; search?: string; categoria?: string }): Promise<PageResponse<Product>> => {
     const { data } = await httpClient.get<PageResponse<Product>>('/products', {
       params: { page, size, ...params }
     });

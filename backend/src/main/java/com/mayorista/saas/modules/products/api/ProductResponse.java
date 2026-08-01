@@ -11,7 +11,9 @@ public record ProductResponse(
         int stockActual,
         int stockMinimo,
         int precioNeto,
-        boolean stockBajo
+        boolean stockBajo,
+        String categoria,
+        String descripcion
 ) {
     public static ProductResponse from(ProductEntity entity) {
         return new ProductResponse(
@@ -21,7 +23,9 @@ public record ProductResponse(
                 entity.getStockActual(),
                 entity.getStockMinimo(),
                 entity.getPrecioNeto(),
-                entity.getStockActual() <= entity.getStockMinimo()
+                entity.getStockActual() <= entity.getStockMinimo(),
+                entity.getCategoria(),
+                entity.getDescripcion()
         );
     }
 }

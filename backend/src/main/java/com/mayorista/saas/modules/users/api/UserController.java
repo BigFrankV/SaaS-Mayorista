@@ -26,8 +26,10 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<UserResponse>> list(@PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
-        return ResponseEntity.ok(userService.list(pageable));
+    public ResponseEntity<Page<UserResponse>> list(
+            @PageableDefault(size = 20, sort = "nombre") Pageable pageable,
+            @RequestParam(required = false, defaultValue = "true") boolean activo) {
+        return ResponseEntity.ok(userService.list(pageable, activo));
     }
 
     @PostMapping

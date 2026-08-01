@@ -140,6 +140,11 @@ public class AuthService {
 
     @Transactional
     public void logout(String refreshToken) {
+        logout(refreshToken, null);
+    }
+
+    @Transactional
+    public void logout(String refreshToken, String accessJti) {
         Claims claims = jwtService.parseRefreshToken(refreshToken);
         String jti = claims.getId();
 
@@ -152,6 +157,10 @@ public class AuthService {
             Duration ttl = Duration.between(Instant.now(), token.getExpiraEn()).abs();
             tokenBlocklistService.blockJti(jti, ttl);
         });
+
+        if (accessJti != null && !accessJti.isBlank()) {
+            tokenBlocklistService.blockJti(accessJti, Duration.ofMinutes(15));
+        }
     }
 
     public MeResponse getCurrentUserProfile(UUID userId) {

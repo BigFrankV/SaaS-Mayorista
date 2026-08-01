@@ -5,12 +5,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "productos")
-public class ProductEntity {
+public class ProductEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     private UUID id;
@@ -38,6 +41,12 @@ public class ProductEntity {
 
     @Column(name = "actualizado_en", nullable = false)
     private Instant actualizadoEn;
+
+    @Column(name = "categoria")
+    private String categoria;
+
+    @Column(name = "descripcion", columnDefinition = "TEXT")
+    private String descripcion;
 
     public UUID getId() {
         return id;
@@ -75,6 +84,14 @@ public class ProductEntity {
         return actualizadoEn;
     }
 
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
     public void setId(UUID id) {
         this.id = id;
     }
@@ -109,5 +126,13 @@ public class ProductEntity {
 
     public void setActualizadoEn(Instant actualizadoEn) {
         this.actualizadoEn = actualizadoEn;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 }

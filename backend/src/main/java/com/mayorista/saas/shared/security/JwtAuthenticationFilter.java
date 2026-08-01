@@ -41,9 +41,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtService.parseAccessToken(token);
             String jti = claims.getId();
             if (tokenBlocklistService.isBlocked(jti)) {
-                filterChain.doFilter(request, response);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token bloqueado");
                 return;
             }
+
+            // Store access token info for downstream use (e.g. logout blocklist)
+            request.setAttribute("access_jti", jti);
+            request.setAttribute("access_token", token);
 
             UUID userId = UUID.fromString(claims.getSubject());
             UUID tenantId = UUID.fromString(String.valueOf(claims.get("tenant_id")));
@@ -54,8 +58,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(principal, null, List.of(() -> "ROLE_" + role));
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             SecurityContextHolder.clearContext();
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalido: " + e.getMessage());
+            return;
         }
 
         filterChain.doFilter(request, response);

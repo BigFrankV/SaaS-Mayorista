@@ -22,10 +22,33 @@ httpClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Parse error response body into a user-friendly shape
+function parseErrorBody(error: unknown): { message: string; status?: number } {
+  const axiosError = error as any;
+  const data = axiosError?.response?.data;
+  if (data && typeof data === 'object') {
+    // New standard format: { status, error, message, timestamp }
+    if ('status' in data && 'message' in data) {
+      console.warn(`API Error [${data.status}]: ${data.message}`);
+      return { message: data.message, status: data.status };
+    }
+    // Legacy format: { message }
+    if ('message' in data) {
+      console.warn(`API Error: ${data.message}`);
+      return { message: data.message };
+    }
+  }
+  return { message: axiosError?.message ?? 'Unknown error' };
+}
+
 httpClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    // Parse and log every error, not just 401s
+    const parsed = parseErrorBody(error);
+    console.warn(`Request failed [${parsed.status ?? 'N/A'}]: ${parsed.message}`);
+
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }

@@ -4,7 +4,6 @@ import com.mayorista.saas.modules.products.application.ProductService;
 import com.mayorista.saas.modules.products.domain.ProductEntity;
 import jakarta.validation.Valid;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -29,12 +28,15 @@ public class ProductController {
     public ResponseEntity<Page<ProductResponse>> list(
             @PageableDefault(size = 20, sort = "nombre") Pageable pageable,
             @RequestParam(required = false) Boolean stockBajo,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String categoria) {
         Page<ProductResponse> data;
         if (stockBajo != null && stockBajo) {
             data = productService.listByStockBajo(pageable).map(ProductResponse::from);
         } else if (search != null && !search.isBlank()) {
             data = productService.searchByCodigo(search, pageable).map(ProductResponse::from);
+        } else if (categoria != null && !categoria.isBlank()) {
+            data = productService.listByCategoria(categoria, pageable).map(ProductResponse::from);
         } else {
             data = productService.list(pageable).map(ProductResponse::from);
         }
@@ -42,14 +44,13 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    @Cacheable(value = "products", keyGenerator = "tenantAwareKeyGenerator")
     public ResponseEntity<ProductResponse> getById(@PathVariable UUID id) {
         ProductEntity entity = productService.getById(id);
         return ResponseEntity.ok(ProductResponse.from(entity));
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_BODEGUERO')")
     @CacheEvict(value = "products", allEntries = true)
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {
         ProductEntity saved = productService.create(request);
@@ -57,7 +58,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_BODEGUERO')")
     @CacheEvict(value = "products", allEntries = true)
     public ResponseEntity<ProductResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateProductRequest request) {
         ProductEntity saved = productService.update(id, request);
@@ -65,7 +66,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_BODEGUERO')")
     @CacheEvict(value = "products", allEntries = true)
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         productService.delete(id);

@@ -2,6 +2,7 @@ package com.mayorista.saas.modules.auth.api;
 
 import com.mayorista.saas.modules.auth.application.AuthService;
 import com.mayorista.saas.shared.security.JwtRequestPrincipal;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -37,8 +38,10 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
-        authService.logout(request.refreshToken());
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request,
+                                       HttpServletRequest servletRequest) {
+        String accessJti = (String) servletRequest.getAttribute("access_jti");
+        authService.logout(request.refreshToken(), accessJti);
         return ResponseEntity.noContent().build();
     }
 

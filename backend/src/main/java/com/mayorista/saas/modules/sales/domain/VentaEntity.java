@@ -3,9 +3,14 @@ package com.mayorista.saas.modules.sales.domain;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import com.mayorista.saas.modules.clientes.domain.ClienteEntity;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,6 +50,16 @@ public class VentaEntity {
 
     @Column(name = "fecha_venta", nullable = false)
     private Instant fechaVenta;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id")
+    private ClienteEntity cliente;
+
+    @Column(name = "nombre_cliente")
+    private String nombreCliente;
+
+    @Column(name = "anulada", nullable = false)
+    private boolean anulada = false;
 
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleVentaEntity> detalles = new ArrayList<>();
@@ -127,6 +142,30 @@ public class VentaEntity {
 
     public void setFechaVenta(Instant fechaVenta) {
         this.fechaVenta = fechaVenta;
+    }
+
+    public ClienteEntity getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(ClienteEntity cliente) {
+        this.cliente = cliente;
+    }
+
+    public String getNombreCliente() {
+        return nombreCliente;
+    }
+
+    public void setNombreCliente(String nombreCliente) {
+        this.nombreCliente = nombreCliente;
+    }
+
+    public boolean isAnulada() {
+        return anulada;
+    }
+
+    public void setAnulada(boolean anulada) {
+        this.anulada = anulada;
     }
 
     public List<DetalleVentaEntity> getDetalles() {

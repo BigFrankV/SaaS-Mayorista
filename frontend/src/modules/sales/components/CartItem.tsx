@@ -8,53 +8,37 @@ interface CartItemProps {
 
 export function CartItemRow({ item, onUpdateCantidad, onRemove }: CartItemProps) {
   return (
-    <tr>
-      <td>{item.producto.nombre}</td>
-      <td>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-          <button
-            type="button"
-            onClick={() => onUpdateCantidad(item.producto.id, item.cantidad - 1)}
-            style={{ padding: '0.25rem 0.5rem', minWidth: '2rem' }}
-            aria-label="Disminuir cantidad"
-          >
-            −
-          </button>
-          <input
-            type="number"
-            min={1}
-            value={item.cantidad}
-            onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
-              if (!isNaN(val) && val >= 0) {
-                onUpdateCantidad(item.producto.id, val);
-              }
-            }}
-            style={{ width: '3.5rem', textAlign: 'center', padding: '0.25rem' }}
-          />
-          <button
-            type="button"
-            onClick={() => onUpdateCantidad(item.producto.id, item.cantidad + 1)}
-            style={{ padding: '0.25rem 0.5rem', minWidth: '2rem' }}
-            aria-label="Aumentar cantidad"
-          >
-            +
-          </button>
-        </div>
-      </td>
-      <td style={{ textAlign: 'right' }}>${item.producto.precioNeto.toLocaleString('es-CL')}</td>
-      <td style={{ textAlign: 'right' }}>${item.subtotal.toLocaleString('es-CL')}</td>
-      <td>
+    <div className="pos-cart-item">
+      <div className="item-name">{item.producto.nombre}</div>
+      <div className="item-qty">
         <button
           type="button"
-          className="secondary"
-          onClick={() => onRemove(item.producto.id)}
-          style={{ padding: '0.25rem 0.5rem' }}
-          aria-label="Eliminar producto"
+          onClick={() => onUpdateCantidad(item.producto.id, item.cantidad - 1)}
+          aria-label="Disminuir cantidad"
         >
-          ✕
+          −
         </button>
-      </td>
-    </tr>
+        <span className="qty-value">{item.cantidad}</span>
+        <button
+          type="button"
+          onClick={() => onUpdateCantidad(item.producto.id, item.cantidad + 1)}
+          aria-label="Aumentar cantidad"
+        >
+          +
+        </button>
+      </div>
+      <div className="item-price">${item.subtotal.toLocaleString('es-CL')}</div>
+      <button
+        type="button"
+        className="item-remove"
+        onClick={() => onRemove(item.producto.id)}
+        aria-label="Eliminar producto"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
   );
 }

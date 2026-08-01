@@ -1,0 +1,134 @@
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">S</div>
+      <div class="logo-text-block">
+        <div class="logo-text">SaaS Mayorista</div>
+        <div class="logo-sub">Panel de Control</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Navegación</div>
+      <a class="nav-item" href="#" data-page="dashboard">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </span>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#" data-page="productos">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </span>
+        Productos
+      </a>
+      <a class="nav-item" href="#" data-page="pos">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </span>
+        POS
+      </a>
+      <a class="nav-item active" href="#" data-page="usuarios">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        Usuarios
+        <span class="badge badge-info nav-badge">Admin</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar" style="background: var(--color-primary);">JP</div>
+      <div class="user-info">
+        <div class="user-name">Juan Pérez</div>
+        <div class="user-role">Administrador</div>
+      </div>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-breadcrumb">
+      <a href="#" onclick="navigateTo('dashboard'); return false;">Dashboard</a>
+      <span>/</span>
+      <span>Usuarios</span>
+    </div>
+    <div class="topbar-title">Gestión de Usuarios</div>
+    <div class="topbar-right">
+      <div class="topbar-user">
+        <div class="user-details">
+          <div class="name">Juan Pérez</div>
+          <div class="role">Administrador</div>
+        </div>
+        <div class="avatar" style="background: var(--color-primary);">JP</div>
+      </div>
+      <button class="btn btn-ghost btn-sm">Salir</button>
+    </div>
+  </header>
+
+  <main class="main-content users-page">
+    <div id="notification-area" style="margin-bottom: var(--space-4);"></div>
+
+    <div class="page-header">
+      <h1>Usuarios del Tenant</h1>
+      <button class="btn btn-primary" onclick="openModal('usuario-modal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo Usuario
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="data-table" id="usuarios-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Creado</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Usuario -->
+<div class="modal-overlay" id="usuario-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Nuevo Usuario</span>
+      <button class="modal-close" onclick="closeModal('usuario-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+        <div class="form-group">
+          <label for="user-nombre">Nombre Completo</label>
+          <input type="text" id="user-nombre" class="input" placeholder="Ej: María González" />
+        </div>
+        <div class="form-group">
+          <label for="user-email">Email</label>
+          <input type="email" id="user-email" class="input" placeholder="ejemplo@distribuidora.cl" />
+        </div>
+        <div class="form-group">
+          <label for="user-password">Contraseña</label>
+          <input type="password" id="user-password" class="input" placeholder="••••••••" />
+        </div>
+        <div class="form-group">
+          <label for="user-rol">Rol</label>
+          <select id="user-rol" class="select">
+            <option value="vendedor">Vendedor</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('usuario-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('usuario-modal'); showNotification('success', 'Usuario creado correctamente')">Guardar Usuario</button>
+    </div>
+  </div>
+</div>

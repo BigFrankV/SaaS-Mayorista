@@ -2,9 +2,9 @@ import { httpClient } from '../../../shared/api/httpClient';
 import type { UserResponse, CreateUserPayload, UpdateUserPayload } from '../../../shared/api/types';
 
 export const userApi = {
-  list: async (page = 0, size = 20) => {
+  list: async (page = 0, size = 20, activo?: boolean) => {
     const { data } = await httpClient.get<{ content: UserResponse[]; totalElements: number }>('/users', {
-      params: { page, size },
+      params: { page, size, ...(activo !== undefined ? { activo } : {}) },
     });
     return data;
   },

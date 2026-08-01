@@ -5,6 +5,8 @@ import com.mayorista.saas.modules.tenant.domain.TenantRepository;
 import com.mayorista.saas.modules.users.domain.UserEntity;
 import com.mayorista.saas.modules.users.domain.UserRepository;
 import com.mayorista.saas.modules.users.domain.UserRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -19,6 +21,8 @@ import java.util.UUID;
 @Component
 @Profile("dev")
 public class DevBootstrapSeeder implements ApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DevBootstrapSeeder.class);
 
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
@@ -57,7 +61,10 @@ public class DevBootstrapSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (!enabled || userRepository.findByEmailIgnoreCase(adminEmail).isPresent()) {
+        if (!enabled || tenantRepository.count() > 0 || userRepository.findByEmailIgnoreCase(adminEmail).isPresent()) {
+            if (tenantRepository.count() > 0) {
+                log.info("Tenants already exist, skipping bootstrap seeder.");
+            }
             return;
         }
 

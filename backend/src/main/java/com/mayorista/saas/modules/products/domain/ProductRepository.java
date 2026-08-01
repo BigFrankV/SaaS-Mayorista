@@ -23,8 +23,13 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID> {
     @Query("SELECT p FROM ProductEntity p WHERE p.tenantId = :tenantId AND p.stockActual <= p.stockMinimo")
     Page<ProductEntity> findByStockBajo(@Param("tenantId") UUID tenantId, Pageable pageable);
 
+    @Query("SELECT COUNT(p) FROM ProductEntity p WHERE p.tenantId = :tenantId AND p.stockActual <= p.stockMinimo")
+    long countByStockBajo(@Param("tenantId") UUID tenantId);
+
     @Query("SELECT p FROM ProductEntity p WHERE p.tenantId = :tenantId AND (LOWER(p.codigoBarras) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<ProductEntity> search(@Param("tenantId") UUID tenantId, @Param("query") String query, Pageable pageable);
+
+    Page<ProductEntity> findAllByTenantIdAndCategoria(UUID tenantId, String categoria, Pageable pageable);
 
     // FUTURE: Use @EntityGraph(attributePaths = {"category", "supplier"}) when relations are added
 }
